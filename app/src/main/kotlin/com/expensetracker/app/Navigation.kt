@@ -151,7 +151,8 @@ fun MainNavigation() {
                         viewModel = settingsViewModel,
                         onNavigateToCategoryManager = {
                             backStack.add(CategoryManagerKey)
-                        }
+                        },
+                        onNavigateBack = { backStack.removeLastOrNull() }
                     )
                 }
 

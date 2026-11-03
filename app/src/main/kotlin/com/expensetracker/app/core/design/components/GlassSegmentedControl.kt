@@ -40,7 +40,9 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.expensetracker.app.core.design.theme.AppTheme
 import com.expensetracker.app.core.design.theme.PillShape
+import com.expensetracker.app.core.design.theme.ShuDingSpecularRimBrush
 import com.expensetracker.app.core.design.theme.liquidGlass
+import com.expensetracker.app.core.design.theme.shuDingLiquidGlass
 
 /**
  * Modern reactive Liquid Glass Segmented Control:
@@ -85,12 +87,10 @@ fun <T> GlassSegmentedControl(
         modifier = modifier
             .fillMaxWidth()
             .height(height)
-            .liquidGlass(
+            .shuDingLiquidGlass(
                 shape = PillShape,
-                tint = glassTint,
-                borderWidth = 1.dp,
-                borderTopColor = borderTop,
-                borderBottomColor = borderBottom
+                isDark = isDark,
+                borderWidth = 1.dp
             )
             .padding(4.dp),
         contentAlignment = Alignment.CenterStart
@@ -98,42 +98,41 @@ fun <T> GlassSegmentedControl(
         val totalWidth = maxWidth
         val itemWidth = totalWidth / items.size
 
-        // Sliding Active Indicator Capsule
-        val activeBgBrush = if (isDark) {
-            Brush.verticalGradient(
-                listOf(
-                    currentAccentColor.copy(alpha = 0.35f),
-                    currentAccentColor.copy(alpha = 0.18f)
-                )
-            )
-        } else {
-            Brush.verticalGradient(
-                listOf(
-                    currentAccentColor.copy(alpha = 0.22f),
-                    currentAccentColor.copy(alpha = 0.12f)
-                )
-            )
-        }
-
-        val activeBorderBrush = Brush.verticalGradient(
-            listOf(
-                currentAccentColor.copy(alpha = 0.85f),
-                currentAccentColor.copy(alpha = 0.30f)
-            )
-        )
-
+        // Sliding Active Indicator Capsule with Shu Ding Liquid Glass Refraction
         Box(
             modifier = Modifier
                 .offset(x = itemWidth * animatedIndex)
                 .width(itemWidth)
                 .fillMaxHeight()
                 .padding(horizontal = 2.dp)
-                .clip(PillShape)
-                .background(activeBgBrush, PillShape)
-                .border(1.dp, activeBorderBrush, PillShape)
-        )
+                .shuDingLiquidGlass(
+                    shape = PillShape,
+                    isDark = isDark,
+                    accentGlow = currentAccentColor,
+                    borderWidth = 1.dp
+                )
+        ) {
+            // Subtle Top Chromatic Specular Flare
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth(0.78f)
+                    .height(2.dp)
+                    .align(Alignment.TopCenter)
+                    .background(
+                        Brush.horizontalGradient(
+                            listOf(
+                                Color.Transparent,
+                                Color(0xFFFF2E63).copy(alpha = 0.7f),
+                                Color(0xFF00E5FF).copy(alpha = 0.9f),
+                                Color(0xFF0077FF).copy(alpha = 0.7f),
+                                Color.Transparent
+                            )
+                        )
+                    )
+            )
+        }
 
-        // Labels / Icons Row
+        // Labels / Icons Row with Inset Dividers Between Inactive Joined Buttons
         Row(
             modifier = Modifier.fillMaxSize(),
             verticalAlignment = Alignment.CenterVertically

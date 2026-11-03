@@ -50,6 +50,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.expensetracker.app.core.design.theme.AppTheme
 import com.expensetracker.app.core.design.theme.liquidGlass
+import com.expensetracker.app.core.design.theme.shuDingLiquidGlass
 import dev.chrisbanes.haze.HazeState
 
 enum class NavDestination(
@@ -127,18 +128,15 @@ fun GlassNavigationBar(
         horizontalArrangement = Arrangement.spacedBy(10.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // Main Navigation Capsule Pill with Reactive Sliding Hover Indicator
+        // Main Navigation Capsule Pill with Shu Ding Liquid Glass Refraction
         BoxWithConstraints(
             modifier = Modifier
                 .weight(1f)
                 .height(64.dp)
-                .liquidGlass(
-                    hazeState = hazeState,
+                .shuDingLiquidGlass(
                     shape = CircleShape,
-                    tint = glassTint,
-                    borderWidth = 1.dp,
-                    borderTopColor = borderTop,
-                    borderBottomColor = borderBottom
+                    isDark = isDark,
+                    borderWidth = 1.dp
                 )
                 .padding(horizontal = 4.dp),
             contentAlignment = Alignment.CenterStart
@@ -146,7 +144,7 @@ fun GlassNavigationBar(
             val totalWidth = maxWidth
             val tabWidth = totalWidth / destinations.size
 
-            // Smooth sliding indicator animation with spring physics
+            // Smooth sliding indicator animation with spring physics (Shu Ding damping curve)
             val animatedIndex by animateFloatAsState(
                 targetValue = selectedIndex.toFloat(),
                 animationSpec = spring(
@@ -156,32 +154,18 @@ fun GlassNavigationBar(
                 label = "tab_hover_slide"
             )
 
-            // Sliding Active Glass Capsule with Chromatic Rainbow Lens Glow
+            // Sliding Active Glass Capsule with Shu Ding Optical Refraction & Chromatic Rim
             Box(
                 modifier = Modifier
                     .offset(x = tabWidth * animatedIndex)
                     .width(tabWidth)
                     .height(52.dp)
                     .padding(horizontal = 2.dp)
-                    .clip(CircleShape)
-                    .background(
-                        Brush.verticalGradient(
-                            colors = if (isDark) {
-                                listOf(Color(0xFF283548), Color(0xFF161F2E))
-                            } else {
-                                listOf(Color(0xFFF1F5F9), Color(0xFFE2E8F0))
-                            }
-                        )
-                    )
-                    .border(
-                        width = 1.dp,
-                        brush = Brush.verticalGradient(
-                            listOf(
-                                if (isDark) Color(0x65FFFFFF) else Color(0x80FFFFFF),
-                                if (isDark) Color(0x15FFFFFF) else Color(0x20000000)
-                            )
-                        ),
-                        shape = CircleShape
+                    .shuDingLiquidGlass(
+                        shape = CircleShape,
+                        isDark = isDark,
+                        accentGlow = Color(0xFF00E5FF),
+                        borderWidth = 1.dp
                     )
             ) {
                 // Top Chromatic Rainbow Lens Flare Arc
@@ -220,7 +204,7 @@ fun GlassNavigationBar(
             }
         }
 
-        // Standalone Circular Floating Action Button with Reactive Spring Press
+        // Standalone Circular Floating Action Button with Reactive Spring Press & Shu Ding Refraction
         Box(
             modifier = Modifier
                 .size(64.dp)
@@ -228,13 +212,11 @@ fun GlassNavigationBar(
                     scaleX = addScale
                     scaleY = addScale
                 }
-                .liquidGlass(
-                    hazeState = hazeState,
+                .shuDingLiquidGlass(
                     shape = CircleShape,
-                    tint = glassTint,
-                    borderWidth = 1.dp,
-                    borderTopColor = borderTop,
-                    borderBottomColor = borderBottom
+                    isDark = isDark,
+                    accentGlow = if (isDark) Color(0xFF00E5FF) else AppTheme.colors.accentPrimary,
+                    borderWidth = 1.dp
                 )
                 .clickable(
                     interactionSource = addInteractionSource,

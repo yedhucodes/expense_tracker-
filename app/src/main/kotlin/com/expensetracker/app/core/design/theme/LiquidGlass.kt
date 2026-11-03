@@ -22,10 +22,13 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -245,3 +248,123 @@ fun GlassCard(
         content()
     }
 }
+
+/**
+ * Shu Ding's Liquid Glass Specular Rim Brush:
+ * Derived from linear-gradient(145deg, rgba(255, 255, 255, 0.72), rgba(205, 246, 255, 0.18) 42%, rgba(255, 255, 255, 0.04) 78%, rgba(255, 255, 255, 0.24))
+ */
+val ShuDingSpecularRimBrush = Brush.linearGradient(
+    colors = listOf(
+        Color(0xB8FFFFFF), // 0.72 specular white
+        Color(0x35BAF4FF), // 0.18 pale cyan bloom
+        Color(0x0CFFFFFF), // 0.04 clear specular
+        Color(0x40BAF4FF)  // 0.24 bottom reflection
+    ),
+    start = Offset.Zero,
+    end = Offset.Infinite
+)
+
+/**
+ * Modifier applying Shu Ding's physical Liquid Glass optical model:
+ * 1. Dual-layer shell gradients (140deg refraction angle + 180deg depth angle)
+ * 2. Inset bottom bevel shadow: simulates box-shadow: 0 -10px 25px inset rgba(0, 0, 0, 0.15)
+ * 3. Multi-anchor chromatic specular bloom (radiant ice-cyan/white apex reflection)
+ * 4. Hairline beveled refraction stroke with edge-bulge optical perception
+ */
+fun Modifier.shuDingLiquidGlass(
+    shape: Shape = PillShape,
+    isDark: Boolean = true,
+    accentGlow: Color? = null,
+    borderWidth: Dp = 1.dp
+): Modifier = this
+    .clip(shape)
+    .drawWithCache {
+        val w = size.width
+        val h = size.height
+
+        // Layer 1: 140deg refraction gradient
+        val layer1Brush = Brush.linearGradient(
+            colors = if (isDark) {
+                listOf(
+                    Color(0x28FFFFFF),
+                    Color(0x0AFFFFFF),
+                    Color(0x18FFFFFF),
+                    Color(0x2AFFFFFF)
+                )
+            } else {
+                listOf(
+                    Color(0x95FFFFFF),
+                    Color(0x50FFFFFF),
+                    Color(0x70FFFFFF),
+                    Color(0x90FFFFFF)
+                )
+            },
+            start = Offset(0f, 0f),
+            end = Offset(w, h * 0.85f)
+        )
+
+        // Layer 2: 180deg vertical depth gradient
+        val layer2Brush = Brush.verticalGradient(
+            colors = if (isDark) {
+                listOf(Color(0xD0182434), Color(0xEA0D1520))
+            } else {
+                listOf(Color(0xF5FFFFFF), Color(0xE5F1F5F9))
+            }
+        )
+
+        // Inset bevel shadow: simulates box-shadow: 0 -10px 25px inset rgba(0,0,0,0.2)
+        val insetShadowBrush = Brush.verticalGradient(
+            colors = listOf(
+                Color.Transparent,
+                Color.Transparent,
+                if (isDark) Color(0x35000000) else Color(0x12000000)
+            )
+        )
+
+        // Top specular glint
+        val glintBrush = Brush.horizontalGradient(
+            listOf(
+                Color.Transparent,
+                if (isDark) Color(0x90FFFFFF) else Color(0xC0FFFFFF),
+                if (isDark) Color(0xC5BAF4FF) else Color(0xE0BAF4FF),
+                if (isDark) Color(0x90FFFFFF) else Color(0xC0FFFFFF),
+                Color.Transparent
+            )
+        )
+
+        onDrawWithContent {
+            // 1. Draw base shell depth
+            drawRect(layer2Brush)
+            // 2. Draw 140deg refraction layer
+            drawRect(layer1Brush)
+            // 3. Draw inset bottom bevel shadow
+            drawRect(insetShadowBrush)
+
+            // 4. Multi-anchor bloom if accent provided
+            if (accentGlow != null) {
+                drawCircle(
+                    brush = Brush.radialGradient(
+                        colors = listOf(
+                            accentGlow.copy(alpha = if (isDark) 0.35f else 0.22f),
+                            accentGlow.copy(alpha = if (isDark) 0.12f else 0.06f),
+                            Color.Transparent
+                        ),
+                        center = Offset(w * 0.5f, h * 0.35f),
+                        radius = w * 0.6f
+                    )
+                )
+            }
+
+            // 5. Draw child content
+            drawContent()
+
+            // 6. Top apex specular glint
+            drawRect(
+                brush = glintBrush,
+                topLeft = Offset(w * 0.12f, 0f),
+                size = Size(w * 0.76f, 1.5f)
+            )
+        }
+    }
+    .border(borderWidth, ShuDingSpecularRimBrush, shape)
+

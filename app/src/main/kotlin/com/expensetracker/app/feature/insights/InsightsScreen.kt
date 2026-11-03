@@ -81,12 +81,15 @@ fun InsightsScreen(
                     subtitle = DatePeriodUtil.formatMonthYear(state.year, state.month)
                 )
 
+                val accentColor = AppTheme.colors.accentPrimary
+
                 // Period Segmented Control with Reactive Liquid Glass
                 GlassSegmentedControl(
                     items = InsightsPeriod.entries,
                     selectedIndex = InsightsPeriod.entries.indexOf(state.period),
                     onItemSelected = { viewModel.selectPeriod(InsightsPeriod.entries[it]) },
                     itemLabel = { it.label },
+                    activeColor = { accentColor },
                     modifier = Modifier.padding(horizontal = AppSpacing.lg, vertical = AppSpacing.xs),
                     height = 48.dp
                 )

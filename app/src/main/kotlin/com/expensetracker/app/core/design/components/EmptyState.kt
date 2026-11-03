@@ -1,7 +1,5 @@
 package com.expensetracker.app.core.design.components
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -16,8 +14,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
@@ -25,7 +21,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.expensetracker.app.core.design.theme.AppSpacing
 import com.expensetracker.app.core.design.theme.AppTheme
-import com.expensetracker.app.core.design.theme.PillShape
+import com.expensetracker.app.core.design.theme.shuDingLiquidGlass
 
 @Composable
 fun EmptyState(
@@ -35,7 +31,8 @@ fun EmptyState(
     modifier: Modifier = Modifier,
     actionButtonText: String? = null,
     actionLabel: String? = null,
-    onActionClick: (() -> Unit)? = null
+    onActionClick: (() -> Unit)? = null,
+    useSecondaryAction: Boolean = false
 ) {
     val buttonText = actionButtonText ?: actionLabel
     val isDark = AppTheme.colors.isDark
@@ -47,38 +44,15 @@ fun EmptyState(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        // Glowing Circular Liquid Glass Orb
+        // Glowing Circular Liquid Glass Orb with Shu Ding Refraction
         Box(
             modifier = Modifier
                 .size(76.dp)
-                .clip(CircleShape)
-                .background(
-                    Brush.radialGradient(
-                        colors = if (isDark) {
-                            listOf(
-                                AppTheme.colors.accentPrimary.copy(alpha = 0.25f),
-                                Color(0x351E2838),
-                                Color(0x20141B26)
-                            )
-                        } else {
-                            listOf(
-                                AppTheme.colors.accentPrimary.copy(alpha = 0.18f),
-                                Color(0x50F1F5F9),
-                                Color(0x30E2E8F0)
-                            )
-                        }
-                    ),
-                    shape = CircleShape
-                )
-                .border(
-                    width = 1.dp,
-                    brush = Brush.verticalGradient(
-                        colors = listOf(
-                            if (isDark) Color(0x70FFFFFF) else Color(0x90FFFFFF),
-                            if (isDark) Color(0x15FFFFFF) else Color(0x1A000000)
-                        )
-                    ),
-                    shape = CircleShape
+                .shuDingLiquidGlass(
+                    shape = CircleShape,
+                    isDark = isDark,
+                    accentGlow = AppTheme.colors.accentPrimary,
+                    borderWidth = 1.dp
                 ),
             contentAlignment = Alignment.Center
         ) {
@@ -112,11 +86,19 @@ fun EmptyState(
 
         if (buttonText != null && onActionClick != null) {
             Spacer(modifier = Modifier.height(AppSpacing.xl))
-            PrimaryActionButton(
-                text = buttonText,
-                onClick = onActionClick,
-                modifier = Modifier.fillMaxWidth(0.70f)
-            )
+            if (useSecondaryAction) {
+                SecondaryActionButton(
+                    text = buttonText,
+                    onClick = onActionClick,
+                    modifier = Modifier.fillMaxWidth(0.65f)
+                )
+            } else {
+                PrimaryActionButton(
+                    text = buttonText,
+                    onClick = onActionClick,
+                    modifier = Modifier.fillMaxWidth(0.65f)
+                )
+            }
         }
     }
 }

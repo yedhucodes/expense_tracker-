@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Category
 import androidx.compose.material.icons.rounded.ChevronRight
@@ -51,7 +52,9 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.expensetracker.app.core.design.components.GlassDialog
 import com.expensetracker.app.core.design.components.PrimaryActionButton
 import com.expensetracker.app.core.design.components.ScreenHeader
@@ -65,13 +68,15 @@ import com.expensetracker.app.core.design.theme.GlassCard
 import com.expensetracker.app.core.design.theme.LocalHazeState
 import com.expensetracker.app.core.design.theme.PillShape
 import com.expensetracker.app.core.design.theme.liquidGlass
+import com.expensetracker.app.core.design.theme.shuDingLiquidGlass
 import dev.chrisbanes.haze.hazeSource
 
 @Composable
 fun SettingsScreen(
     viewModel: SettingsViewModel,
     onNavigateToCategoryManager: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onNavigateBack: (() -> Unit)? = null
 ) {
     val context = LocalContext.current
     val state by viewModel.uiState.collectAsState()
@@ -232,7 +237,10 @@ fun SettingsScreen(
                     .fillMaxSize()
                     .padding(innerPadding)
             ) {
-                ScreenHeader(title = "Settings")
+                ScreenHeader(
+                    title = "Settings",
+                    onNavigateBack = onNavigateBack
+                )
 
                 LazyColumn(
                     modifier = Modifier
@@ -240,7 +248,8 @@ fun SettingsScreen(
                     contentPadding = PaddingValues(
                         start = AppSpacing.lg,
                         end = AppSpacing.lg,
-                        bottom = 128.dp
+                        top = AppSpacing.xs,
+                        bottom = 48.dp
                     ),
                     verticalArrangement = Arrangement.spacedBy(AppSpacing.md)
                 ) {
@@ -332,41 +341,71 @@ fun SettingsScreen(
                     }
 
                     item {
-                        GlassCard(
-                            modifier = Modifier.fillMaxWidth(),
-                            shape = AppShapes.medium
+                        val isDark = AppTheme.colors.isDark
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .shuDingLiquidGlass(
+                                    shape = AppShapes.large,
+                                    isDark = isDark,
+                                    accentGlow = AppTheme.colors.accentPrimary,
+                                    borderWidth = 1.dp
+                                )
+                                .padding(AppSpacing.lg)
                         ) {
-                            Column(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(AppSpacing.md)
-                            ) {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Icon(
-                                        imageVector = Icons.Rounded.Info,
-                                        contentDescription = null,
-                                        tint = AppTheme.colors.accentPrimary,
-                                        modifier = Modifier.size(22.dp)
-                                    )
-                                    Spacer(modifier = Modifier.width(AppSpacing.sm))
-                                    Text(
-                                        text = "[APP_NAME]",
-                                        style = AppTheme.typography.titleMedium,
-                                        color = AppTheme.colors.textPrimary
-                                    )
-                                    Spacer(modifier = Modifier.width(AppSpacing.sm))
-                                    Text(
-                                        text = "v1.0.0",
-                                        style = AppTheme.typography.labelSmall,
-                                        color = AppTheme.colors.textSecondary
-                                    )
+                            Column(modifier = Modifier.fillMaxWidth()) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(40.dp)
+                                            .clip(CircleShape)
+                                            .background(AppTheme.colors.accentPrimary.copy(alpha = 0.18f))
+                                            .border(1.dp, AppTheme.colors.accentPrimary.copy(alpha = 0.35f), CircleShape),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Rounded.Info,
+                                            contentDescription = null,
+                                            tint = AppTheme.colors.accentPrimary,
+                                            modifier = Modifier.size(22.dp)
+                                        )
+                                    }
+
+                                    Spacer(modifier = Modifier.width(AppSpacing.md))
+
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Text(
+                                            text = "[APP_NAME]",
+                                            style = AppTheme.typography.titleMedium,
+                                            fontWeight = FontWeight.Bold,
+                                            color = AppTheme.colors.textPrimary
+                                        )
+                                    }
+
+                                    Box(
+                                        modifier = Modifier
+                                            .clip(PillShape)
+                                            .background(if (isDark) Color(0x25FFFFFF) else Color(0x12000000))
+                                            .border(1.dp, if (isDark) Color(0x35FFFFFF) else Color(0x18000000), PillShape)
+                                            .padding(horizontal = 10.dp, vertical = 4.dp)
+                                    ) {
+                                        Text(
+                                            text = "v1.0.0",
+                                            style = AppTheme.typography.labelSmall,
+                                            fontWeight = FontWeight.SemiBold,
+                                            color = if (isDark) Color(0xFFCBD5E1) else Color(0xFF64748B)
+                                        )
+                                    }
                                 }
 
-                                Spacer(modifier = Modifier.height(AppSpacing.xs))
+                                Spacer(modifier = Modifier.height(AppSpacing.md))
 
                                 Text(
                                     text = "An offline-first, privacy-respecting expense tracker engineered with strict minor-unit monetary precision. All your financial records remain exclusively on your device.",
-                                    style = AppTheme.typography.bodySmall,
+                                    style = AppTheme.typography.bodySmall.copy(lineHeight = 19.sp),
                                     color = AppTheme.colors.textSecondary
                                 )
                             }

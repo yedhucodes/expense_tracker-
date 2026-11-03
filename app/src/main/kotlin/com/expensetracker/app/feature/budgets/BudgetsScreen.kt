@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -24,6 +25,7 @@ import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.AccountBalanceWallet
 import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material.icons.rounded.Edit
+import androidx.compose.material.icons.rounded.Savings
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenuItem
@@ -49,8 +51,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.expensetracker.app.core.design.category.CategoryRegistry
 import com.expensetracker.app.core.design.components.AmountDisplayStyle
 import com.expensetracker.app.core.design.components.AmountText
@@ -71,6 +76,7 @@ import com.expensetracker.app.core.design.theme.AtmosphericBackground
 import com.expensetracker.app.core.design.theme.GlassCard
 import com.expensetracker.app.core.design.theme.LocalHazeState
 import com.expensetracker.app.core.design.theme.PillShape
+import com.expensetracker.app.core.design.theme.shuDingLiquidGlass
 import com.expensetracker.app.core.money.MoneyFormatter
 import com.expensetracker.app.core.time.DatePeriodUtil
 import com.expensetracker.app.domain.model.BudgetThresholdState
@@ -167,6 +173,7 @@ fun BudgetsScreen(
                                     description = "Set budgets for specific categories like Groceries, Dining, or Transport to control your discretionary spend.",
                                     actionLabel = "Add Category Budget",
                                     onActionClick = { viewModel.openCreateDialog(categoryId = null) },
+                                    useSecondaryAction = state.overallBudget == null,
                                     modifier = Modifier.padding(vertical = AppSpacing.lg)
                                 )
                             }
@@ -319,31 +326,60 @@ private fun SetOverallBudgetPrompt(
     onSetBudget: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    GlassCard(
-        modifier = modifier.fillMaxWidth(),
-        shape = AppShapes.large
+    val isDark = AppTheme.colors.isDark
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .shuDingLiquidGlass(
+                shape = AppShapes.large,
+                isDark = isDark,
+                accentGlow = AppTheme.colors.accentPrimary,
+                borderWidth = 1.dp
+            )
+            .padding(AppSpacing.xl)
     ) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier.fillMaxWidth().padding(AppSpacing.lg)
+            modifier = Modifier.fillMaxWidth()
         ) {
+            Box(
+                modifier = Modifier
+                    .size(48.dp)
+                    .clip(CircleShape)
+                    .background(AppTheme.colors.accentPrimary.copy(alpha = 0.18f))
+                    .border(1.dp, AppTheme.colors.accentPrimary.copy(alpha = 0.35f), CircleShape),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = Icons.Rounded.Savings,
+                    contentDescription = null,
+                    tint = AppTheme.colors.accentPrimary,
+                    modifier = Modifier.size(26.dp)
+                )
+            }
+
+            Spacer(modifier = Modifier.height(AppSpacing.md))
+
             Text(
-                text = "No Overall Monthly Budget",
+                text = "Overall Monthly Budget",
                 style = AppTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold,
                 color = AppTheme.colors.textPrimary
             )
-            Spacer(modifier = Modifier.height(4.dp))
+            Spacer(modifier = Modifier.height(AppSpacing.xs))
             Text(
-                text = "Set a monthly spending limit to receive health indicators and stay on track.",
-                style = AppTheme.typography.bodySmall,
+                text = "Set a monthly spending limit to receive health indicators and keep your spending on track.",
+                style = AppTheme.typography.bodySmall.copy(lineHeight = 18.sp),
                 color = AppTheme.colors.textSecondary,
-                modifier = Modifier.padding(horizontal = AppSpacing.md)
+                textAlign = TextAlign.Center,
+                modifier = Modifier.padding(horizontal = AppSpacing.sm)
             )
-            Spacer(modifier = Modifier.height(AppSpacing.md))
+            Spacer(modifier = Modifier.height(AppSpacing.lg))
             PrimaryActionButton(
                 text = "Set Monthly Limit",
+                leadingIcon = Icons.Rounded.Add,
                 onClick = onSetBudget,
-                modifier = Modifier.fillMaxWidth(0.6f)
+                modifier = Modifier.fillMaxWidth(0.65f)
             )
         }
     }
