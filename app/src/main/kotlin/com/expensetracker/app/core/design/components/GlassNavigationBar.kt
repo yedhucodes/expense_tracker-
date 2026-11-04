@@ -154,12 +154,19 @@ fun GlassNavigationBar(
                 label = "tab_hover_slide"
             )
 
+            // Shu Ding fluid momentum: droplet lens elastically elongates horizontally while in transit
+            val slideDelta = (animatedIndex - selectedIndex.toFloat()).coerceIn(-0.6f, 0.6f)
+            val fluidStretchX = 1f + kotlin.math.abs(slideDelta) * 0.14f
+
             // Sliding Active Glass Capsule with Shu Ding Optical Refraction & Chromatic Rim
             Box(
                 modifier = Modifier
                     .offset(x = tabWidth * animatedIndex)
                     .width(tabWidth)
                     .height(52.dp)
+                    .graphicsLayer {
+                        scaleX = fluidStretchX
+                    }
                     .padding(horizontal = 2.dp)
                     .shuDingLiquidGlass(
                         shape = CircleShape,

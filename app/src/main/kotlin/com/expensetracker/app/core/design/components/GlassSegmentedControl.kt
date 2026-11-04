@@ -98,12 +98,19 @@ fun <T> GlassSegmentedControl(
         val totalWidth = maxWidth
         val itemWidth = totalWidth / items.size
 
+        // Shu Ding fluid momentum: droplet lens elastically elongates horizontally while in transit
+        val slideDelta = (animatedIndex - validIndex.toFloat()).coerceIn(-0.6f, 0.6f)
+        val fluidStretchX = 1f + kotlin.math.abs(slideDelta) * 0.12f
+
         // Sliding Active Indicator Capsule with Shu Ding Liquid Glass Refraction
         Box(
             modifier = Modifier
                 .offset(x = itemWidth * animatedIndex)
                 .width(itemWidth)
                 .fillMaxHeight()
+                .graphicsLayer {
+                    scaleX = fluidStretchX
+                }
                 .padding(horizontal = 2.dp)
                 .shuDingLiquidGlass(
                     shape = PillShape,
