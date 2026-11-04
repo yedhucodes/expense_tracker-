@@ -119,19 +119,17 @@ fun <T> GlassSegmentedControl(
                     borderWidth = 1.dp
                 )
         ) {
-            // Subtle Top Chromatic Specular Flare
+            // Pure Diamond Specular Highlight
             Box(
                 modifier = Modifier
                     .fillMaxWidth(0.78f)
-                    .height(2.dp)
+                    .height(1.5.dp)
                     .align(Alignment.TopCenter)
                     .background(
                         Brush.horizontalGradient(
                             listOf(
                                 Color.Transparent,
-                                Color(0xFFFF2E63).copy(alpha = 0.7f),
-                                Color(0xFF00E5FF).copy(alpha = 0.9f),
-                                Color(0xFF0077FF).copy(alpha = 0.7f),
+                                Color(0xC0FFFFFF),
                                 Color.Transparent
                             )
                         )

@@ -28,7 +28,6 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
-import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -40,8 +39,9 @@ import dev.chrisbanes.haze.hazeEffect
 val LocalHazeState = compositionLocalOf { HazeState() }
 
 /**
- * Atmospheric background with vibrant, luminous glowing ambient color mesh orbs
- * matching the signature BeatWave electric aura.
+ * Atmospheric background with elegant celestial ambient aura:
+ * Soft Electric Indigo at the top and oceanic sapphire depth bloom.
+ * Free of muddy green or clashing rainbow blobs for a calm, ultra-luxurious feel.
  */
 @Composable
 fun AtmosphericBackground(
@@ -51,10 +51,10 @@ fun AtmosphericBackground(
     val isDark = AppTheme.colors.isDark
     val infiniteTransition = rememberInfiniteTransition(label = "ambient_glow")
     val pulse by infiniteTransition.animateFloat(
-        initialValue = 0.88f,
-        targetValue = 1.15f,
+        initialValue = 0.90f,
+        targetValue = 1.10f,
         animationSpec = infiniteRepeatable(
-            animation = tween(7000, easing = LinearEasing),
+            animation = tween(8000, easing = LinearEasing),
             repeatMode = RepeatMode.Reverse
         ),
         label = "pulse"
@@ -65,79 +65,64 @@ fun AtmosphericBackground(
             .fillMaxSize()
             .background(AppTheme.colors.canvas)
     ) {
-        // Ambient color orbs
         Canvas(modifier = Modifier.fillMaxSize()) {
             val w = size.width
             val h = size.height
 
             if (isDark) {
-                // Top BeatWave cyan atmospheric radiant aura
+                // Top luminous Indigo atmospheric ambient aura (cohesive with royal indigo accent)
                 drawCircle(
                     brush = Brush.radialGradient(
-                        colors = listOf(Color(0x450EA5E9), Color(0x200284C7), Color(0x080369A1), Color.Transparent),
+                        colors = listOf(
+                            Color(0x356366F1), // Electric Indigo soft bloom
+                            Color(0x184F46E5),
+                            Color(0x081E1B4B),
+                            Color.Transparent
+                        ),
                         center = Offset(w * 0.50f, 0f),
                         radius = (w * 0.95f) * pulse
                     )
                 )
 
-                // Top-right indigo/violet orb
+                // Mid-depth oceanic sapphire ambient glow (smooth, matching lighting)
                 drawCircle(
                     brush = Brush.radialGradient(
-                        colors = listOf(Color(0x386366F1), Color(0x184F46E5), Color.Transparent),
-                        center = Offset(w * 0.85f, h * 0.18f),
+                        colors = listOf(
+                            Color(0x1838BDF8),
+                            Color(0x060284C7),
+                            Color.Transparent
+                        ),
+                        center = Offset(w * 0.85f, h * 0.38f),
+                        radius = w * 0.70f
+                    )
+                )
+
+                // Soft lower violet illumination
+                drawCircle(
+                    brush = Brush.radialGradient(
+                        colors = listOf(
+                            Color(0x14818CF8),
+                            Color.Transparent
+                        ),
+                        center = Offset(w * 0.15f, h * 0.75f),
                         radius = (w * 0.75f) * (2f - pulse)
                     )
                 )
-
-                // Mid-left luminous emerald/cyan orb
-                drawCircle(
-                    brush = Brush.radialGradient(
-                        colors = listOf(Color(0x3210B981), Color(0x14059669), Color.Transparent),
-                        center = Offset(w * 0.08f, h * 0.52f),
-                        radius = (w * 0.70f) * pulse
-                    )
-                )
-
-                // Center soft blue ambient bloom
-                drawCircle(
-                    brush = Brush.radialGradient(
-                        colors = listOf(Color(0x183B82F6), Color.Transparent),
-                        center = Offset(w * 0.50f, h * 0.45f),
-                        radius = w * 0.85f
-                    )
-                )
-
-                // Bottom-right warm rose/amber orb
-                drawCircle(
-                    brush = Brush.radialGradient(
-                        colors = listOf(Color(0x2EFA5252), Color(0x10E03131), Color.Transparent),
-                        center = Offset(w * 0.90f, h * 0.85f),
-                        radius = (w * 0.80f) * (2f - pulse)
-                    )
-                )
             } else {
-                // Light mode: soft pastel atmospheric orbs
+                // Light mode: ethereal soft sky & lavender ambient pastels
                 drawCircle(
                     brush = Brush.radialGradient(
-                        colors = listOf(Color(0x35A5B4FC), Color(0x15C7D2FE), Color.Transparent),
-                        center = Offset(w * 0.85f, h * 0.12f),
-                        radius = (w * 0.75f) * pulse
+                        colors = listOf(Color(0x25C7D2FE), Color(0x0CE0E7FF), Color.Transparent),
+                        center = Offset(w * 0.50f, 0f),
+                        radius = (w * 0.85f) * pulse
                     )
                 )
 
                 drawCircle(
                     brush = Brush.radialGradient(
-                        colors = listOf(Color(0x306EE7B7), Color(0x12A7F3D0), Color.Transparent),
-                        center = Offset(w * 0.10f, h * 0.45f),
+                        colors = listOf(Color(0x20BAE6FD), Color.Transparent),
+                        center = Offset(w * 0.85f, h * 0.35f),
                         radius = (w * 0.65f) * (2f - pulse)
-                    )
-                )
-
-                drawCircle(
-                    brush = Brush.radialGradient(
-                        colors = listOf(Color(0x25FDA4AF), Color(0x0CFECDD3), Color.Transparent),
-                        center = Offset(w * 0.90f, h * 0.82f),
-                        radius = (w * 0.80f) * pulse
                     )
                 )
             }
@@ -156,17 +141,17 @@ fun AtmosphericBackground(
 fun Modifier.liquidGlass(
     hazeState: HazeState? = null,
     shape: Shape = RoundedCornerShape(24.dp),
-    tint: Color = if (AppTheme.colors.isDark) Color(0xD0131B27) else Color(0xEBFFFFFF),
+    tint: Color = if (AppTheme.colors.isDark) Color(0xD0111522) else Color(0xEBFFFFFF),
     blurRadius: Dp = 24.dp,
     borderWidth: Dp = 1.dp,
-    borderTopColor: Color = if (AppTheme.colors.isDark) Color(0x65FFFFFF) else Color(0x99FFFFFF),
-    borderBottomColor: Color = if (AppTheme.colors.isDark) Color(0x15FFFFFF) else Color(0x1A000000)
+    borderTopColor: Color = if (AppTheme.colors.isDark) Color(0x50FFFFFF) else Color(0x99FFFFFF),
+    borderBottomColor: Color = if (AppTheme.colors.isDark) Color(0x12FFFFFF) else Color(0x1A000000)
 ): Modifier {
     val hazeModifier = if (hazeState != null) {
         Modifier.hazeEffect(
             state = hazeState,
             style = HazeStyle(
-                backgroundColor = if (AppTheme.colors.isDark) Color(0xFF0F172A) else Color(0xFFF8FAFC),
+                backgroundColor = if (AppTheme.colors.isDark) Color(0xFF090A0F) else Color(0xFFF8FAFC),
                 tint = HazeTint(tint),
                 blurRadius = blurRadius
             )
@@ -187,17 +172,17 @@ fun Modifier.liquidGlass(
 
 /**
  * Frosted Liquid Glass Card container for dashboard cards, budget cards, and insight panels.
- * Renders an Apple Music / BeatWave glass surface with semi-translucent gradient tint and
+ * Renders a crystalline glass surface with semi-translucent gradient tint and
  * a 1.dp hairline metallic reflection gradient stroke over the atmospheric canvas.
  */
 @Composable
 fun GlassCard(
     modifier: Modifier = Modifier,
     shape: Shape = RoundedCornerShape(24.dp),
-    tint: Color = if (AppTheme.colors.isDark) Color(0xD0131B27) else Color(0xEBFFFFFF),
+    tint: Color = if (AppTheme.colors.isDark) Color(0xD0111522) else Color(0xEBFFFFFF),
     borderWidth: Dp = 1.dp,
-    borderTopColor: Color = if (AppTheme.colors.isDark) Color(0x65FFFFFF) else Color(0x99FFFFFF),
-    borderBottomColor: Color = if (AppTheme.colors.isDark) Color(0x15FFFFFF) else Color(0x1A000000),
+    borderTopColor: Color = if (AppTheme.colors.isDark) Color(0x50FFFFFF) else Color(0x99FFFFFF),
+    borderBottomColor: Color = if (AppTheme.colors.isDark) Color(0x12FFFFFF) else Color(0x1A000000),
     hazeState: HazeState? = null,
     onClick: (() -> Unit)? = null,
     content: @Composable BoxScope.() -> Unit
@@ -213,7 +198,7 @@ fun GlassCard(
 
     val backgroundBrush = if (isDark) {
         Brush.verticalGradient(
-            colors = listOf(Color(0x85212C3C), Color(0x55141B26))
+            colors = listOf(Color(0x2E161C2A), Color(0x1A0F1420))
         )
     } else {
         Brush.verticalGradient(
@@ -238,7 +223,7 @@ fun GlassCard(
                     Brush.horizontalGradient(
                         listOf(
                             Color.Transparent,
-                            if (isDark) Color(0x50FFFFFF) else Color(0x80FFFFFF),
+                            if (isDark) Color(0x40FFFFFF) else Color(0x80FFFFFF),
                             Color.Transparent
                         )
                     )
@@ -251,14 +236,14 @@ fun GlassCard(
 
 /**
  * Shu Ding's Liquid Glass Specular Rim Brush:
- * Derived from linear-gradient(145deg, rgba(255, 255, 255, 0.72), rgba(205, 246, 255, 0.18) 42%, rgba(255, 255, 255, 0.04) 78%, rgba(255, 255, 255, 0.24))
+ * Derived from physical light reflection with pure diamond specular highlight.
  */
 val ShuDingSpecularRimBrush = Brush.linearGradient(
     colors = listOf(
-        Color(0xB8FFFFFF), // 0.72 specular white
-        Color(0x35BAF4FF), // 0.18 pale cyan bloom
-        Color(0x0CFFFFFF), // 0.04 clear specular
-        Color(0x40BAF4FF)  // 0.24 bottom reflection
+        Color(0xA0FFFFFF), // 0.62 specular white
+        Color(0x40FFFFFF), // 0.25 clear rim
+        Color(0x10FFFFFF), // 0.06 hairline highlight
+        Color(0x30FFFFFF)  // 0.19 bottom ambient reflection
     ),
     start = Offset.Zero,
     end = Offset.Infinite
@@ -268,8 +253,8 @@ val ShuDingSpecularRimBrush = Brush.linearGradient(
  * Modifier applying Shu Ding's physical Liquid Glass optical model:
  * 1. Dual-layer shell gradients (140deg refraction angle + 180deg depth angle)
  * 2. Inset bottom bevel shadow: simulates box-shadow: 0 -10px 25px inset rgba(0, 0, 0, 0.15)
- * 3. Multi-anchor chromatic specular bloom (radiant ice-cyan/white apex reflection)
- * 4. Hairline beveled refraction stroke with edge-bulge optical perception
+ * 3. Multi-anchor chromatic specular bloom (luminous accent reflection)
+ * 4. Hairline beveled refraction stroke with pure diamond specular rim
  */
 fun Modifier.shuDingLiquidGlass(
     shape: Shape = PillShape,
@@ -286,10 +271,10 @@ fun Modifier.shuDingLiquidGlass(
         val layer1Brush = Brush.linearGradient(
             colors = if (isDark) {
                 listOf(
-                    Color(0x28FFFFFF),
-                    Color(0x0AFFFFFF),
-                    Color(0x18FFFFFF),
-                    Color(0x2AFFFFFF)
+                    Color(0x22FFFFFF),
+                    Color(0x08FFFFFF),
+                    Color(0x14FFFFFF),
+                    Color(0x25FFFFFF)
                 )
             } else {
                 listOf(
@@ -306,7 +291,7 @@ fun Modifier.shuDingLiquidGlass(
         // Layer 2: 180deg vertical depth gradient
         val layer2Brush = Brush.verticalGradient(
             colors = if (isDark) {
-                listOf(Color(0xD0182434), Color(0xEA0D1520))
+                listOf(Color(0xCC111420), Color(0xE50B0E17))
             } else {
                 listOf(Color(0xF5FFFFFF), Color(0xE5F1F5F9))
             }
@@ -317,7 +302,7 @@ fun Modifier.shuDingLiquidGlass(
             colors = listOf(
                 Color.Transparent,
                 Color.Transparent,
-                if (isDark) Color(0x35000000) else Color(0x12000000)
+                if (isDark) Color(0x30000000) else Color(0x10000000)
             )
         )
 
@@ -325,9 +310,9 @@ fun Modifier.shuDingLiquidGlass(
         val glintBrush = Brush.horizontalGradient(
             listOf(
                 Color.Transparent,
-                if (isDark) Color(0x90FFFFFF) else Color(0xC0FFFFFF),
-                if (isDark) Color(0xC5BAF4FF) else Color(0xE0BAF4FF),
-                if (isDark) Color(0x90FFFFFF) else Color(0xC0FFFFFF),
+                if (isDark) Color(0x80FFFFFF) else Color(0xC0FFFFFF),
+                if (isDark) Color(0xC0FFFFFF) else Color(0xE0FFFFFF),
+                if (isDark) Color(0x80FFFFFF) else Color(0xC0FFFFFF),
                 Color.Transparent
             )
         )
@@ -345,8 +330,8 @@ fun Modifier.shuDingLiquidGlass(
                 drawCircle(
                     brush = Brush.radialGradient(
                         colors = listOf(
-                            accentGlow.copy(alpha = if (isDark) 0.35f else 0.22f),
-                            accentGlow.copy(alpha = if (isDark) 0.12f else 0.06f),
+                            accentGlow.copy(alpha = if (isDark) 0.38f else 0.22f),
+                            accentGlow.copy(alpha = if (isDark) 0.14f else 0.08f),
                             Color.Transparent
                         ),
                         center = Offset(w * 0.5f, h * 0.35f),
@@ -367,4 +352,3 @@ fun Modifier.shuDingLiquidGlass(
         }
     }
     .border(borderWidth, ShuDingSpecularRimBrush, shape)
-

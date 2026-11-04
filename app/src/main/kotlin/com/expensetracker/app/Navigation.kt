@@ -1,5 +1,6 @@
 package com.expensetracker.app
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
@@ -66,6 +67,12 @@ fun MainNavigation() {
     val currentKey = backStack.lastOrNull()
     val isTopLevelDestination = currentKey is HomeKey || currentKey is ActivityKey || currentKey is InsightsKey || currentKey is BudgetsKey
 
+    // Ensure system back gesture / back button always returns to Home before exiting the app
+    BackHandler(enabled = isTopLevelDestination && currentKey !is HomeKey) {
+        backStack.clear()
+        backStack.add(HomeKey)
+    }
+
     val currentNavDestination = when (currentKey) {
         is ActivityKey -> NavDestination.Activity
         is InsightsKey -> NavDestination.Insights
@@ -98,10 +105,12 @@ fun MainNavigation() {
                         },
                         onNavigateToActivity = {
                             backStack.clear()
+                            backStack.add(HomeKey)
                             backStack.add(ActivityKey)
                         },
                         onNavigateToBudgets = {
                             backStack.clear()
+                            backStack.add(HomeKey)
                             backStack.add(BudgetsKey)
                         },
                         onNavigateToSettings = {
@@ -180,8 +189,14 @@ fun MainNavigation() {
                         NavDestination.Budgets -> BudgetsKey
                     }
                     if (currentKey != targetKey) {
-                        backStack.clear()
-                        backStack.add(targetKey)
+                        if (targetKey is HomeKey) {
+                            backStack.clear()
+                            backStack.add(HomeKey)
+                        } else {
+                            backStack.clear()
+                            backStack.add(HomeKey)
+                            backStack.add(targetKey)
+                        }
                     }
                 },
                 onAddClick = {

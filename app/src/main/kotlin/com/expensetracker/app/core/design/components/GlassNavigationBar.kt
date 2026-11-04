@@ -5,8 +5,7 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.awaitEachGesture
-import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
@@ -48,6 +47,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
@@ -72,41 +72,39 @@ enum class NavDestination(
 }
 
 /**
- * Top chromatic rainbow arc highlight
+ * Pure diamond specular reflection highlight - clean, crystalline, and restrained.
+ * Harmonizes with Apple Liquid Glass aesthetic without clashing rainbow bars.
  */
-private val ChromaticTopRainbow = Brush.horizontalGradient(
+private val DiamondSpecularHighlight = Brush.horizontalGradient(
     listOf(
         Color.Transparent,
-        Color(0xFFFF2E63).copy(alpha = 0.70f),
-        Color(0xFFFFB800).copy(alpha = 0.85f),
-        Color(0xFF00E5FF).copy(alpha = 0.95f),
-        Color(0xFF0077FF).copy(alpha = 0.85f),
-        Color(0xFF9D00FF).copy(alpha = 0.70f),
+        Color(0x60FFFFFF),
+        Color(0xD0FFFFFF),
+        Color(0x60FFFFFF),
+        Color.Transparent
+    )
+)
+
+private val DiamondSpecularRimBottom = Brush.horizontalGradient(
+    listOf(
+        Color.Transparent,
+        Color(0x25FFFFFF),
+        Color(0x50FFFFFF),
+        Color(0x25FFFFFF),
         Color.Transparent
     )
 )
 
 /**
- * Bottom subtle chromatic refraction accent
- */
-private val ChromaticBottomRainbow = Brush.horizontalGradient(
-    listOf(
-        Color.Transparent,
-        Color(0xFF00E5FF).copy(alpha = 0.40f),
-        Color(0xFF0077FF).copy(alpha = 0.55f),
-        Color(0xFFFF2E63).copy(alpha = 0.35f),
-        Color.Transparent
-    )
-)
-
-/**
- * Modern BeatWave Liquid Glass Navigation Bar:
+ * Modern Liquid Glass Navigation Bar:
+ * - Direct tap response on any tab (guaranteed Home / Tab navigation)
  * - Fluid touch & drag response with 1:1 finger tracking across the entire pill
  * - Magnetic bouncy spring snap on finger lift
  * - Proximity-driven micro-interactions (elevation & scale) on icons under the lens
  * - Tactile haptic feedback ticks on crossing tab thresholds
- * - Droplet elongation momentum based on drag velocity
+ * - Droplet elongation momentum based on motion velocity
  * - Left 4-tab liquid glass capsule + right standalone (+) floating action button
+ * - Cohesive Obsidian & Royal Indigo palette matching the entire application
  */
 @Composable
 fun GlassNavigationBar(
@@ -120,6 +118,7 @@ fun GlassNavigationBar(
     val destinations = remember { NavDestination.entries }
     val selectedIndex = destinations.indexOf(currentDestination).coerceAtLeast(0)
     val haptic = LocalHapticFeedback.current
+    val accentColor = AppTheme.colors.accentPrimary
 
     val addInteractionSource = remember { MutableInteractionSource() }
     val isAddPressed by addInteractionSource.collectIsPressedAsState()
@@ -151,12 +150,14 @@ fun GlassNavigationBar(
         ) {
             val totalWidth = maxWidth
             val tabWidth = totalWidth / destinations.size
+            val density = LocalDensity.current
+            val totalWidthPx = with(density) { totalWidth.toPx() }
 
             var isDragging by remember { mutableStateOf(false) }
             var dragOffsetFraction by remember { mutableFloatStateOf(selectedIndex.toFloat()) }
             var lastHapticIndex by remember { mutableIntStateOf(selectedIndex) }
 
-            // Sync with external destination changes (when not actively dragging)
+            // Sync with external destination changes whenever not actively dragging
             LaunchedEffect(selectedIndex) {
                 if (!isDragging) {
                     dragOffsetFraction = selectedIndex.toFloat()
@@ -199,81 +200,69 @@ fun GlassNavigationBar(
                     .shuDingLiquidGlass(
                         shape = CircleShape,
                         isDark = isDark,
-                        accentGlow = if (isDragging) Color(0xFF00E5FF).copy(alpha = 0.60f) else Color(0xFF00E5FF),
+                        accentGlow = accentColor,
                         borderWidth = 1.dp
                     )
             ) {
-                // Top Chromatic Rainbow Lens Flare Arc
+                // Top Diamond Specular Highlight Glint
                 Box(
                     modifier = Modifier
-                        .fillMaxWidth(0.82f)
-                        .height(3.dp)
+                        .fillMaxWidth(0.75f)
+                        .height(2.dp)
                         .align(Alignment.TopCenter)
-                        .background(ChromaticTopRainbow)
+                        .background(DiamondSpecularHighlight)
                 )
 
-                // Bottom Chromatic Refraction Arc
+                // Bottom Subtle Specular Rim
                 Box(
                     modifier = Modifier
-                        .fillMaxWidth(0.82f)
-                        .height(2.dp)
+                        .fillMaxWidth(0.65f)
+                        .height(1.5.dp)
                         .align(Alignment.BottomCenter)
-                        .background(ChromaticBottomRainbow)
+                        .background(DiamondSpecularRimBottom)
                 )
             }
 
-            // Tabs Row with Proximity Micro-Interactions
+            // Tabs Row with Proximity Micro-Interactions + Drag Gesture Detector
             Row(
                 modifier = Modifier
                     .fillMaxSize()
                     .pointerInput(destinations.size) {
-                        awaitEachGesture {
-                            val down = awaitFirstDown(requireUnconsumed = false)
-                            val widthPx = size.width.toFloat()
-                            val tabWidthPx = if (widthPx > 0f) widthPx / destinations.size else 1f
+                        val tabWidthPx = if (totalWidthPx > 0f) totalWidthPx / destinations.size else 1f
 
-                            val initialIndex = (down.position.x / tabWidthPx)
-                                .toInt()
-                                .coerceIn(0, destinations.size - 1)
-
-                            isDragging = true
-                            dragOffsetFraction = initialIndex.toFloat()
-                            lastHapticIndex = initialIndex
-                            haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-
-                            val pointerId = down.id
-                            while (true) {
-                                val event = awaitPointerEvent()
-                                val change = event.changes.firstOrNull { it.id == pointerId } ?: break
-
-                                if (change.pressed) {
-                                    val currentX = change.position.x
-                                    val continuousFraction = ((currentX / tabWidthPx) - 0.5f)
-                                        .coerceIn(0f, (destinations.size - 1).toFloat())
-                                    dragOffsetFraction = continuousFraction
-
-                                    val currentNearest = (currentX / tabWidthPx)
-                                        .toInt()
-                                        .coerceIn(0, destinations.size - 1)
-
-                                    if (currentNearest != lastHapticIndex) {
-                                        lastHapticIndex = currentNearest
-                                        haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                                    }
-                                    change.consume()
-                                } else {
-                                    // Finger lifted: magnetic snap to the nearest destination!
-                                    isDragging = false
-                                    val finalIndex = (change.position.x / tabWidthPx)
-                                        .toInt()
-                                        .coerceIn(0, destinations.size - 1)
-                                    dragOffsetFraction = finalIndex.toFloat()
-                                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                                    onNavigateToDestination(destinations[finalIndex])
-                                    break
+                        detectHorizontalDragGestures(
+                            onDragStart = { offset ->
+                                isDragging = true
+                                val fraction = (offset.x / tabWidthPx - 0.5f)
+                                    .coerceIn(0f, (destinations.size - 1).toFloat())
+                                dragOffsetFraction = fraction
+                                val nearest = (offset.x / tabWidthPx).toInt().coerceIn(0, destinations.size - 1)
+                                lastHapticIndex = nearest
+                                haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                            },
+                            onDragEnd = {
+                                isDragging = false
+                                val finalIndex = (dragOffsetFraction + 0.5f).toInt().coerceIn(0, destinations.size - 1)
+                                dragOffsetFraction = finalIndex.toFloat()
+                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                onNavigateToDestination(destinations[finalIndex])
+                            },
+                            onDragCancel = {
+                                isDragging = false
+                                dragOffsetFraction = selectedIndex.toFloat()
+                            },
+                            onHorizontalDrag = { change, dragAmount ->
+                                change.consume()
+                                val newFraction = (dragOffsetFraction + dragAmount / tabWidthPx)
+                                    .coerceIn(0f, (destinations.size - 1).toFloat())
+                                dragOffsetFraction = newFraction
+                                val currentNearest = (newFraction + 0.5f).toInt().coerceIn(0, destinations.size - 1)
+                                if (currentNearest != lastHapticIndex) {
+                                    lastHapticIndex = currentNearest
+                                    haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                                 }
                             }
-                        }
+                        )
                     },
                 horizontalArrangement = Arrangement.SpaceEvenly,
                 verticalAlignment = Alignment.CenterVertically
@@ -283,6 +272,12 @@ fun GlassNavigationBar(
                     NavTabItem(
                         destination = destination,
                         proximity = proximity,
+                        onClick = {
+                            isDragging = false
+                            dragOffsetFraction = index.toFloat()
+                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                            onNavigateToDestination(destination)
+                        },
                         modifier = Modifier.weight(1f)
                     )
                 }
@@ -300,7 +295,7 @@ fun GlassNavigationBar(
                 .shuDingLiquidGlass(
                     shape = CircleShape,
                     isDark = isDark,
-                    accentGlow = if (isDark) Color(0xFF00E5FF) else AppTheme.colors.accentPrimary,
+                    accentGlow = accentColor,
                     borderWidth = 1.dp
                 )
                 .clickable(
@@ -312,29 +307,29 @@ fun GlassNavigationBar(
                 .semantics { contentDescription = "Add new transaction" },
             contentAlignment = Alignment.Center
         ) {
-            // Subtle Top Chromatic Accent
+            // Top Diamond Specular Accent
             Box(
                 modifier = Modifier
                     .fillMaxWidth(0.60f)
                     .height(2.dp)
                     .align(Alignment.TopCenter)
-                    .background(ChromaticTopRainbow)
+                    .background(DiamondSpecularHighlight)
             )
 
             Icon(
                 imageVector = Icons.Rounded.Add,
                 contentDescription = null,
-                tint = if (isDark) Color.White else AppTheme.colors.accentPrimary,
+                tint = Color.White,
                 modifier = Modifier.size(28.dp)
             )
 
-            // Subtle Bottom Chromatic Accent
+            // Bottom Diamond Specular Accent
             Box(
                 modifier = Modifier
-                    .fillMaxWidth(0.60f)
-                    .height(2.dp)
+                    .fillMaxWidth(0.50f)
+                    .height(1.5.dp)
                     .align(Alignment.BottomCenter)
-                    .background(ChromaticBottomRainbow)
+                    .background(DiamondSpecularRimBottom)
             )
         }
     }
@@ -344,12 +339,14 @@ fun GlassNavigationBar(
  * Tab item displaying an animated icon and title with proximity-based micro-interactions:
  * - Icon floats upward (-2.5dp) into the liquid glass lens as it approaches
  * - Icon gently zooms (1.12f)
- * - Color smoothly brightens to active state
+ * - Color smoothly brightens to active white state
+ * - Direct tap handler ensures immediate, reliable navigation
  */
 @Composable
 private fun NavTabItem(
     destination: NavDestination,
     proximity: Float,
+    onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val isDark = AppTheme.colors.isDark
@@ -371,6 +368,12 @@ private fun NavTabItem(
     Box(
         modifier = modifier
             .height(52.dp)
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+                role = Role.Tab,
+                onClick = onClick
+            )
             .semantics { contentDescription = destination.title },
         contentAlignment = Alignment.Center
     ) {

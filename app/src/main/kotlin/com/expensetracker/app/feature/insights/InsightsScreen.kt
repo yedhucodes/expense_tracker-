@@ -129,11 +129,9 @@ fun InsightsScreen(
                             ) {
                                 // Total Spent Card
                                 GlassCard(
-                                    modifier = Modifier
-                                        .weight(1f)
-                                        .padding(AppSpacing.md)
+                                    modifier = Modifier.weight(1f)
                                 ) {
-                                    Column {
+                                    Column(modifier = Modifier.padding(AppSpacing.md)) {
                                         Text(
                                             text = "Total Spent",
                                             style = AppTheme.typography.labelSmall,
@@ -152,11 +150,9 @@ fun InsightsScreen(
 
                                 // Daily Average Card
                                 GlassCard(
-                                    modifier = Modifier
-                                        .weight(1f)
-                                        .padding(AppSpacing.md)
+                                    modifier = Modifier.weight(1f)
                                 ) {
-                                    Column {
+                                    Column(modifier = Modifier.padding(AppSpacing.md)) {
                                         Text(
                                             text = "Daily Average",
                                             style = AppTheme.typography.labelSmall,
@@ -180,12 +176,12 @@ fun InsightsScreen(
                             item {
                                 val catStyle = CategoryRegistry.getCategory(top.categoryId)
                                 GlassCard(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(AppSpacing.md)
+                                    modifier = Modifier.fillMaxWidth()
                                 ) {
                                     Row(
-                                        modifier = Modifier.fillMaxWidth(),
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(AppSpacing.md),
                                         verticalAlignment = Alignment.CenterVertically
                                     ) {
                                         CategoryIconTile(
@@ -266,11 +262,9 @@ fun InsightsScreen(
                         // Cashflow Comparison Glass Card
                         item {
                             GlassCard(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(AppSpacing.md)
+                                modifier = Modifier.fillMaxWidth()
                             ) {
-                                Column {
+                                Column(modifier = Modifier.padding(AppSpacing.md)) {
                                     Text(
                                         text = "Monthly Net Flow",
                                         style = AppTheme.typography.labelMedium,
@@ -344,13 +338,13 @@ private fun CategorySpendingItem(
     val catStyle = CategoryRegistry.getCategory(item.categoryId)
 
     GlassCard(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(horizontal = AppSpacing.md, vertical = AppSpacing.sm),
+        modifier = modifier.fillMaxWidth(),
         shape = AppShapes.medium
     ) {
         Row(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = AppSpacing.md, vertical = AppSpacing.sm),
             verticalAlignment = Alignment.CenterVertically
         ) {
             CategoryIconTile(

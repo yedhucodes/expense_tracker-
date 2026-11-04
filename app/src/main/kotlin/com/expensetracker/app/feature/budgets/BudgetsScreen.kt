@@ -403,10 +403,9 @@ private fun CategoryBudgetCard(
     }
 
     GlassCard(
-        modifier = modifier
-            .fillMaxWidth()
-            .clickable(role = Role.Button, onClick = onEdit),
-        shape = AppShapes.medium
+        modifier = modifier.fillMaxWidth(),
+        shape = AppShapes.medium,
+        onClick = onEdit
     ) {
         Column(modifier = Modifier.padding(AppSpacing.md)) {
             Row(
