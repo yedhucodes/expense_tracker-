@@ -1,12 +1,12 @@
 package com.expensetracker.app.core.design.components
 
-import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
@@ -33,15 +33,22 @@ import androidx.compose.material.icons.rounded.Home
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -49,9 +56,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.expensetracker.app.core.design.theme.AppTheme
-import com.expensetracker.app.core.design.theme.liquidGlass
 import com.expensetracker.app.core.design.theme.shuDingLiquidGlass
 import dev.chrisbanes.haze.HazeState
+import kotlin.math.abs
 
 enum class NavDestination(
     val route: String,
@@ -64,37 +71,42 @@ enum class NavDestination(
     Budgets("budgets", "Budgets", Icons.Rounded.AccountBalanceWallet)
 }
 
-// Chromatic Aberration / Liquid Prismatic Refraction Highlights (BeatWave style)
+/**
+ * Top chromatic rainbow arc highlight
+ */
 private val ChromaticTopRainbow = Brush.horizontalGradient(
     listOf(
-        Color(0x00FFAA00),
-        Color(0xEEFFAA00), // Amber
-        Color(0xFFFF2E63), // Pink/Magenta
-        Color(0xFFA855F7), // Violet
-        Color(0xFF00E5FF), // Cyan
-        Color(0xEE0077FF), // Electric Blue
-        Color(0x000077FF)
-    )
-)
-
-private val ChromaticBottomRainbow = Brush.horizontalGradient(
-    listOf(
-        Color(0x000077FF),
-        Color(0xDD0077FF), // Electric Blue
-        Color(0xFF00E5FF), // Cyan
-        Color(0xEEFFFFFF), // Specular White
-        Color(0xFFFF2E63), // Magenta
-        Color(0xDDFFAA00), // Amber
-        Color(0x00FFAA00)
+        Color.Transparent,
+        Color(0xFFFF2E63).copy(alpha = 0.70f),
+        Color(0xFFFFB800).copy(alpha = 0.85f),
+        Color(0xFF00E5FF).copy(alpha = 0.95f),
+        Color(0xFF0077FF).copy(alpha = 0.85f),
+        Color(0xFF9D00FF).copy(alpha = 0.70f),
+        Color.Transparent
     )
 )
 
 /**
- * Modern floating glass navigation bar styled exactly after BeatWave:
- * - A primary floating capsule pill on the left containing the navigation destinations.
- * - An animated reactive sliding indicator capsule with spring momentum and tactile press response.
- * - Chromatic liquid glass refraction rainbow rim highlights along the top and bottom borders.
- * - A standalone circular floating glass button on the right for quick Add Transaction.
+ * Bottom subtle chromatic refraction accent
+ */
+private val ChromaticBottomRainbow = Brush.horizontalGradient(
+    listOf(
+        Color.Transparent,
+        Color(0xFF00E5FF).copy(alpha = 0.40f),
+        Color(0xFF0077FF).copy(alpha = 0.55f),
+        Color(0xFFFF2E63).copy(alpha = 0.35f),
+        Color.Transparent
+    )
+)
+
+/**
+ * Modern BeatWave Liquid Glass Navigation Bar:
+ * - Fluid touch & drag response with 1:1 finger tracking across the entire pill
+ * - Magnetic bouncy spring snap on finger lift
+ * - Proximity-driven micro-interactions (elevation & scale) on icons under the lens
+ * - Tactile haptic feedback ticks on crossing tab thresholds
+ * - Droplet elongation momentum based on drag velocity
+ * - Left 4-tab liquid glass capsule + right standalone (+) floating action button
  */
 @Composable
 fun GlassNavigationBar(
@@ -105,12 +117,9 @@ fun GlassNavigationBar(
     hazeState: HazeState? = null
 ) {
     val isDark = AppTheme.colors.isDark
-    val glassTint = if (isDark) Color(0xD0131B27) else Color(0xEBFFFFFF)
-    val borderTop = if (isDark) Color(0x55FFFFFF) else Color(0x99FFFFFF)
-    val borderBottom = if (isDark) Color(0x12FFFFFF) else Color(0x1A000000)
-
     val destinations = remember { NavDestination.entries }
     val selectedIndex = destinations.indexOf(currentDestination).coerceAtLeast(0)
+    val haptic = LocalHapticFeedback.current
 
     val addInteractionSource = remember { MutableInteractionSource() }
     val isAddPressed by addInteractionSource.collectIsPressedAsState()
@@ -128,7 +137,7 @@ fun GlassNavigationBar(
         horizontalArrangement = Arrangement.spacedBy(10.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // Main Navigation Capsule Pill with Shu Ding Liquid Glass Refraction
+        // Main Navigation Capsule Pill with Interactive Touch & Drag Tracking
         BoxWithConstraints(
             modifier = Modifier
                 .weight(1f)
@@ -137,28 +146,47 @@ fun GlassNavigationBar(
                     shape = CircleShape,
                     isDark = isDark,
                     borderWidth = 1.dp
-                )
-                .padding(horizontal = 4.dp),
+                ),
             contentAlignment = Alignment.CenterStart
         ) {
             val totalWidth = maxWidth
             val tabWidth = totalWidth / destinations.size
 
-            // Smooth sliding indicator animation with spring physics (Shu Ding damping curve)
+            var isDragging by remember { mutableStateOf(false) }
+            var dragOffsetFraction by remember { mutableFloatStateOf(selectedIndex.toFloat()) }
+            var lastHapticIndex by remember { mutableIntStateOf(selectedIndex) }
+
+            // Sync with external destination changes (when not actively dragging)
+            LaunchedEffect(selectedIndex) {
+                if (!isDragging) {
+                    dragOffsetFraction = selectedIndex.toFloat()
+                    lastHapticIndex = selectedIndex
+                }
+            }
+
+            // Real-time animation: tight tracking while dragging, bouncy spring snap when resting
+            val targetIndex = if (isDragging) dragOffsetFraction else selectedIndex.toFloat()
             val animatedIndex by animateFloatAsState(
-                targetValue = selectedIndex.toFloat(),
-                animationSpec = spring(
-                    dampingRatio = 0.72f,
-                    stiffness = Spring.StiffnessMediumLow
-                ),
+                targetValue = targetIndex,
+                animationSpec = if (isDragging) {
+                    spring(
+                        dampingRatio = 0.95f,
+                        stiffness = Spring.StiffnessHigh
+                    )
+                } else {
+                    spring(
+                        dampingRatio = 0.72f,
+                        stiffness = Spring.StiffnessMediumLow
+                    )
+                },
                 label = "tab_hover_slide"
             )
 
-            // Shu Ding fluid momentum: droplet lens elastically elongates horizontally while in transit
-            val slideDelta = (animatedIndex - selectedIndex.toFloat()).coerceIn(-0.6f, 0.6f)
-            val fluidStretchX = 1f + kotlin.math.abs(slideDelta) * 0.14f
+            // Droplet elongation momentum: lens stretches along the motion vector
+            val slideDelta = (animatedIndex - (if (isDragging) dragOffsetFraction else selectedIndex.toFloat())).coerceIn(-0.6f, 0.6f)
+            val fluidStretchX = 1f + abs(slideDelta) * 0.16f + (if (isDragging) 0.08f else 0f)
 
-            // Sliding Active Glass Capsule with Shu Ding Optical Refraction & Chromatic Rim
+            // Sliding Active Glass Capsule with Shu Ding Optical Refraction & Specular Bloom
             Box(
                 modifier = Modifier
                     .offset(x = tabWidth * animatedIndex)
@@ -171,7 +199,7 @@ fun GlassNavigationBar(
                     .shuDingLiquidGlass(
                         shape = CircleShape,
                         isDark = isDark,
-                        accentGlow = Color(0xFF00E5FF),
+                        accentGlow = if (isDragging) Color(0xFF00E5FF).copy(alpha = 0.60f) else Color(0xFF00E5FF),
                         borderWidth = 1.dp
                     )
             ) {
@@ -194,17 +222,67 @@ fun GlassNavigationBar(
                 )
             }
 
-            // Tabs Row
+            // Tabs Row with Proximity Micro-Interactions
             Row(
-                modifier = Modifier.fillMaxSize(),
+                modifier = Modifier
+                    .fillMaxSize()
+                    .pointerInput(destinations.size) {
+                        awaitEachGesture {
+                            val down = awaitFirstDown(requireUnconsumed = false)
+                            val widthPx = size.width.toFloat()
+                            val tabWidthPx = if (widthPx > 0f) widthPx / destinations.size else 1f
+
+                            val initialIndex = (down.position.x / tabWidthPx)
+                                .toInt()
+                                .coerceIn(0, destinations.size - 1)
+
+                            isDragging = true
+                            dragOffsetFraction = initialIndex.toFloat()
+                            lastHapticIndex = initialIndex
+                            haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+
+                            val pointerId = down.id
+                            while (true) {
+                                val event = awaitPointerEvent()
+                                val change = event.changes.firstOrNull { it.id == pointerId } ?: break
+
+                                if (change.pressed) {
+                                    val currentX = change.position.x
+                                    val continuousFraction = ((currentX / tabWidthPx) - 0.5f)
+                                        .coerceIn(0f, (destinations.size - 1).toFloat())
+                                    dragOffsetFraction = continuousFraction
+
+                                    val currentNearest = (currentX / tabWidthPx)
+                                        .toInt()
+                                        .coerceIn(0, destinations.size - 1)
+
+                                    if (currentNearest != lastHapticIndex) {
+                                        lastHapticIndex = currentNearest
+                                        haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                                    }
+                                    change.consume()
+                                } else {
+                                    // Finger lifted: magnetic snap to the nearest destination!
+                                    isDragging = false
+                                    val finalIndex = (change.position.x / tabWidthPx)
+                                        .toInt()
+                                        .coerceIn(0, destinations.size - 1)
+                                    dragOffsetFraction = finalIndex.toFloat()
+                                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                    onNavigateToDestination(destinations[finalIndex])
+                                    break
+                                }
+                            }
+                        }
+                    },
                 horizontalArrangement = Arrangement.SpaceEvenly,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                destinations.forEach { destination ->
+                destinations.forEachIndexed { index, destination ->
+                    val proximity = (1f - abs(animatedIndex - index)).coerceIn(0f, 1f)
                     NavTabItem(
                         destination = destination,
-                        isSelected = currentDestination == destination,
-                        onClick = { onNavigateToDestination(destination) },
+                        proximity = proximity,
                         modifier = Modifier.weight(1f)
                     )
                 }
@@ -262,56 +340,48 @@ fun GlassNavigationBar(
     }
 }
 
+/**
+ * Tab item displaying an animated icon and title with proximity-based micro-interactions:
+ * - Icon floats upward (-2.5dp) into the liquid glass lens as it approaches
+ * - Icon gently zooms (1.12f)
+ * - Color smoothly brightens to active state
+ */
 @Composable
 private fun NavTabItem(
     destination: NavDestination,
-    isSelected: Boolean,
-    onClick: () -> Unit,
+    proximity: Float,
     modifier: Modifier = Modifier
 ) {
     val isDark = AppTheme.colors.isDark
-    val interactionSource = remember { MutableInteractionSource() }
-    val isPressed by interactionSource.collectIsPressedAsState()
-
-    // Tactile Reactive Press Scaling
-    val scale by animateFloatAsState(
-        targetValue = if (isPressed) 0.88f else 1f,
-        animationSpec = spring(
-            dampingRatio = 0.65f,
-            stiffness = Spring.StiffnessMedium
-        ),
-        label = "tab_press_scale"
-    )
 
     val activeContentColor = if (isDark) Color.White else Color(0xFF0F172A)
     val inactiveContentColor = if (isDark) Color(0x9994A3B8) else Color(0xFF64748B)
 
-    val contentColor by animateColorAsState(
-        targetValue = if (isSelected) activeContentColor else inactiveContentColor,
-        animationSpec = spring(stiffness = Spring.StiffnessMedium),
-        label = "tab_content_color"
+    // Smooth color interpolation based on proximity to the active liquid lens
+    val contentColor = Color(
+        red = inactiveContentColor.red + (activeContentColor.red - inactiveContentColor.red) * proximity,
+        green = inactiveContentColor.green + (activeContentColor.green - inactiveContentColor.green) * proximity,
+        blue = inactiveContentColor.blue + (activeContentColor.blue - inactiveContentColor.blue) * proximity,
+        alpha = inactiveContentColor.alpha + (activeContentColor.alpha - inactiveContentColor.alpha) * proximity
     )
+
+    val iconScale = 1f + proximity * 0.12f
+    val iconElevation = (-2.5f * proximity).dp
 
     Box(
         modifier = modifier
             .height(52.dp)
-            .graphicsLayer {
-                scaleX = scale
-                scaleY = scale
-            }
-            .clip(CircleShape)
-            .clickable(
-                interactionSource = interactionSource,
-                indication = null,
-                role = Role.Tab,
-                onClick = onClick
-            )
             .semantics { contentDescription = destination.title },
         contentAlignment = Alignment.Center
     ) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
+            verticalArrangement = Arrangement.Center,
+            modifier = Modifier.graphicsLayer {
+                scaleX = iconScale
+                scaleY = iconScale
+                translationY = iconElevation.toPx()
+            }
         ) {
             Icon(
                 imageVector = destination.icon,
@@ -323,7 +393,7 @@ private fun NavTabItem(
             Text(
                 text = destination.title,
                 style = AppTheme.typography.labelSmall.copy(fontSize = 10.sp),
-                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                fontWeight = if (proximity > 0.6f) FontWeight.Bold else FontWeight.Medium,
                 color = contentColor,
                 maxLines = 1
             )
