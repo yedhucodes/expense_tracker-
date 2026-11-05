@@ -42,13 +42,13 @@ fun AmountText(
         null -> AppTheme.colors.textPrimary
     }
 
-    val textStyle: TextStyle = when (displayStyle) {
+    val textStyle: TextStyle = (when (displayStyle) {
         AmountDisplayStyle.DisplayHero -> AppTheme.typography.displayLarge
         AmountDisplayStyle.Headline -> AppTheme.typography.headlineLarge
         AmountDisplayStyle.Title, AmountDisplayStyle.TitleCard -> AppTheme.typography.titleLarge
         AmountDisplayStyle.Body, AmountDisplayStyle.BodyStandard, AmountDisplayStyle.ListAmount -> AppTheme.typography.bodyLarge
         AmountDisplayStyle.Caption -> AppTheme.typography.bodySmall
-    }
+    }).copy(fontFeatureSettings = "tnum")
 
     Text(
         text = formattedString,

@@ -46,6 +46,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
+import com.expensetracker.app.R
 import com.expensetracker.app.core.design.components.AmountDisplayStyle
 import com.expensetracker.app.core.design.components.AmountText
 import com.expensetracker.app.core.design.components.EmptyState
@@ -278,6 +279,7 @@ fun ActivityScreen(
                 } else if (state.groupedTransactions.isEmpty()) {
                     EmptyState(
                         icon = Icons.AutoMirrored.Rounded.ReceiptLong,
+                        animationRes = R.raw.animation_empty_activity,
                         title = "No Transactions Found",
                         description = if (state.searchQuery.isNotBlank() || state.selectedType != null || state.selectedCategoryId != null) {
                             "Try adjusting or clearing your filters to view more activity."

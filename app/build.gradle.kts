@@ -94,4 +94,7 @@ dependencies {
 
   // Liquid Glass Haze
   implementation(libs.haze)
+
+  // Lottie Animation Engine
+  implementation(libs.lottie.compose)
 }

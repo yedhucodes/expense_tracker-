@@ -36,6 +36,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
+import com.expensetracker.app.R
 import com.expensetracker.app.core.design.category.CategoryRegistry
 import com.expensetracker.app.core.design.components.AmountDisplayStyle
 import com.expensetracker.app.core.design.components.AmountText
@@ -106,6 +107,7 @@ fun InsightsScreen(
                 } else if (state.summary.totalSpentMinor == 0L && state.summary.totalIncomeMinor == 0L) {
                     EmptyState(
                         icon = Icons.Rounded.PieChart,
+                        animationRes = R.raw.animation_empty_insights,
                         title = "No Expense Data",
                         description = "There are no recorded transactions for ${state.period.label.lowercase()}. Add expenses to visualize spending trends.",
                         modifier = Modifier.weight(1f)

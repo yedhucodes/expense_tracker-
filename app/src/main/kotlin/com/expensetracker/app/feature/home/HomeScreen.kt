@@ -44,6 +44,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
+import com.expensetracker.app.R
 import com.expensetracker.app.core.design.category.CategoryRegistry
 import com.expensetracker.app.core.design.components.AmountDisplayStyle
 import com.expensetracker.app.core.design.components.AmountText
@@ -327,6 +328,7 @@ fun HomeScreen(
                         item {
                             EmptyState(
                                 icon = Icons.AutoMirrored.Rounded.ReceiptLong,
+                                animationRes = R.raw.animation_empty_activity,
                                 title = "No Activity Yet",
                                 description = "Record your first expense or income to see your dashboard update live.",
                                 actionLabel = "Add Transaction",

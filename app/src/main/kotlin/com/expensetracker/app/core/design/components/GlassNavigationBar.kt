@@ -1,9 +1,9 @@
 package com.expensetracker.app.core.design.components
 
-import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -41,6 +42,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
@@ -56,6 +58,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.expensetracker.app.core.design.theme.AppTheme
+import com.expensetracker.app.core.design.theme.MotionTokens
+import com.expensetracker.app.core.design.theme.PillShape
+import com.expensetracker.app.core.design.theme.ShuDingSpecularRimBrush
 import com.expensetracker.app.core.design.theme.shuDingLiquidGlass
 import dev.chrisbanes.haze.HazeState
 import kotlin.math.abs
@@ -95,15 +100,41 @@ private val DiamondSpecularRimBottom = Brush.horizontalGradient(
     )
 )
 
+/** Maps destination to 5-slot navigation index: [Home, Activity, Add(+), Insights, Budgets] */
+private fun destinationToSlotIndex(destination: NavDestination): Int = when (destination) {
+    NavDestination.Home -> 0
+    NavDestination.Activity -> 1
+    NavDestination.Insights -> 3
+    NavDestination.Budgets -> 4
+}
+
+/** Maps 5-slot navigation index to destination (returns null for center Add button slot) */
+private fun slotIndexToDestination(slot: Int): NavDestination? = when (slot) {
+    0 -> NavDestination.Home
+    1 -> NavDestination.Activity
+    3 -> NavDestination.Insights
+    4 -> NavDestination.Budgets
+    else -> null
+}
+
 /**
  * Modern Liquid Glass Navigation Bar:
+ * Inspired by Dribbble Tab Bar Animation & Apple Liquid Glass Design System.
+ *
+ * Structure:
+ * 1. Home
+ * 2. Activity
+ * 3. Central Add Transaction action (+)
+ * 4. Insights
+ * 5. Budgets
+ *
  * - Direct tap response on any tab (guaranteed Home / Tab navigation)
  * - Fluid touch & drag response with 1:1 finger tracking across the entire pill
  * - Magnetic bouncy spring snap on finger lift
  * - Proximity-driven micro-interactions (elevation & scale) on icons under the lens
  * - Tactile haptic feedback ticks on crossing tab thresholds
  * - Droplet elongation momentum based on motion velocity
- * - Left 4-tab liquid glass capsule + right standalone (+) floating action button
+ * - Central (+) action button with restrained Indigo/Violet gradient and reactive spring scale
  * - Cohesive Obsidian & Royal Indigo palette matching the entire application
  */
 @Composable
@@ -115,32 +146,31 @@ fun GlassNavigationBar(
     hazeState: HazeState? = null
 ) {
     val isDark = AppTheme.colors.isDark
-    val destinations = remember { NavDestination.entries }
-    val selectedIndex = destinations.indexOf(currentDestination).coerceAtLeast(0)
+    val currentSlot = destinationToSlotIndex(currentDestination)
     val haptic = LocalHapticFeedback.current
     val accentColor = AppTheme.colors.accentPrimary
+    val violetColor = AppTheme.colors.violetHighlight
 
     val addInteractionSource = remember { MutableInteractionSource() }
     val isAddPressed by addInteractionSource.collectIsPressedAsState()
     val addScale by animateFloatAsState(
         targetValue = if (isAddPressed) 0.88f else 1f,
-        animationSpec = spring(dampingRatio = 0.65f, stiffness = Spring.StiffnessMedium),
+        animationSpec = MotionTokens.FabPressSpring,
         label = "add_press_scale"
     )
 
-    Row(
+    Box(
         modifier = modifier
             .fillMaxWidth()
             .navigationBarsPadding()
-            .padding(horizontal = 14.dp, vertical = 10.dp),
-        horizontalArrangement = Arrangement.spacedBy(10.dp),
-        verticalAlignment = Alignment.CenterVertically
+            .padding(horizontal = 16.dp, vertical = 10.dp),
+        contentAlignment = Alignment.Center
     ) {
-        // Main Navigation Capsule Pill with Interactive Touch & Drag Tracking
+        // Unified 5-Slot Floating Navigation Capsule
         BoxWithConstraints(
             modifier = Modifier
-                .weight(1f)
-                .height(64.dp)
+                .fillMaxWidth()
+                .height(66.dp)
                 .shuDingLiquidGlass(
                     shape = CircleShape,
                     isDark = isDark,
@@ -149,54 +179,49 @@ fun GlassNavigationBar(
             contentAlignment = Alignment.CenterStart
         ) {
             val totalWidth = maxWidth
-            val tabWidth = totalWidth / destinations.size
+            val slotCount = 5
+            val slotWidth = totalWidth / slotCount
             val density = LocalDensity.current
             val totalWidthPx = with(density) { totalWidth.toPx() }
 
             var isDragging by remember { mutableStateOf(false) }
-            var dragOffsetFraction by remember { mutableFloatStateOf(selectedIndex.toFloat()) }
-            var lastHapticIndex by remember { mutableIntStateOf(selectedIndex) }
+            var dragSlotFraction by remember { mutableFloatStateOf(currentSlot.toFloat()) }
+            var lastHapticSlot by remember { mutableIntStateOf(currentSlot) }
 
             // Sync with external destination changes whenever not actively dragging
-            LaunchedEffect(selectedIndex) {
+            LaunchedEffect(currentSlot) {
                 if (!isDragging) {
-                    dragOffsetFraction = selectedIndex.toFloat()
-                    lastHapticIndex = selectedIndex
+                    dragSlotFraction = currentSlot.toFloat()
+                    lastHapticSlot = currentSlot
                 }
             }
 
             // Real-time animation: tight tracking while dragging, bouncy spring snap when resting
-            val targetIndex = if (isDragging) dragOffsetFraction else selectedIndex.toFloat()
-            val animatedIndex by animateFloatAsState(
-                targetValue = targetIndex,
+            val targetSlot = if (isDragging) dragSlotFraction else currentSlot.toFloat()
+            val animatedSlot by animateFloatAsState(
+                targetValue = targetSlot,
                 animationSpec = if (isDragging) {
-                    spring(
-                        dampingRatio = 0.95f,
-                        stiffness = Spring.StiffnessHigh
-                    )
+                    MotionTokens.DragTrackingSpring
                 } else {
-                    spring(
-                        dampingRatio = 0.72f,
-                        stiffness = Spring.StiffnessMediumLow
-                    )
+                    MotionTokens.IndicatorSpring
                 },
                 label = "tab_hover_slide"
             )
 
             // Droplet elongation momentum: lens stretches along the motion vector
-            val slideDelta = (animatedIndex - (if (isDragging) dragOffsetFraction else selectedIndex.toFloat())).coerceIn(-0.6f, 0.6f)
+            val slideDelta = (animatedSlot - (if (isDragging) dragSlotFraction else currentSlot.toFloat())).coerceIn(-0.6f, 0.6f)
             val fluidStretchX = 1f + abs(slideDelta) * 0.16f + (if (isDragging) 0.08f else 0f)
 
-            // Sliding Active Glass Capsule with Shu Ding Optical Refraction & Specular Bloom
+            // Sliding Active Glass Capsule Indicator (glides between destination slots)
             Box(
                 modifier = Modifier
-                    .offset(x = tabWidth * animatedIndex)
-                    .width(tabWidth)
-                    .height(52.dp)
+                    .offset(x = slotWidth * animatedSlot)
+                    .width(slotWidth)
+                    .height(54.dp)
                     .graphicsLayer {
                         scaleX = fluidStretchX
                     }
-                    .padding(horizontal = 2.dp)
+                    .padding(horizontal = 3.dp)
                     .shuDingLiquidGlass(
                         shape = CircleShape,
                         isDark = isDark,
@@ -223,42 +248,50 @@ fun GlassNavigationBar(
                 )
             }
 
-            // Tabs Row with Proximity Micro-Interactions + Drag Gesture Detector
+            // 5-Slot Interactive Row (Slot 0: Home, 1: Activity, 2: Center FAB, 3: Insights, 4: Budgets)
             Row(
                 modifier = Modifier
                     .fillMaxSize()
-                    .pointerInput(destinations.size) {
-                        val tabWidthPx = if (totalWidthPx > 0f) totalWidthPx / destinations.size else 1f
+                    .pointerInput(Unit) {
+                        val slotWidthPx = if (totalWidthPx > 0f) totalWidthPx / slotCount else 1f
 
                         detectHorizontalDragGestures(
                             onDragStart = { offset ->
                                 isDragging = true
-                                val fraction = (offset.x / tabWidthPx - 0.5f)
-                                    .coerceIn(0f, (destinations.size - 1).toFloat())
-                                dragOffsetFraction = fraction
-                                val nearest = (offset.x / tabWidthPx).toInt().coerceIn(0, destinations.size - 1)
-                                lastHapticIndex = nearest
+                                val fraction = (offset.x / slotWidthPx - 0.5f).coerceIn(0f, 4f)
+                                dragSlotFraction = fraction
+                                val nearestSlot = (offset.x / slotWidthPx).toInt().coerceIn(0, 4)
+                                lastHapticSlot = nearestSlot
                                 haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                             },
                             onDragEnd = {
                                 isDragging = false
-                                val finalIndex = (dragOffsetFraction + 0.5f).toInt().coerceIn(0, destinations.size - 1)
-                                dragOffsetFraction = finalIndex.toFloat()
+                                val rawSlot = (dragSlotFraction + 0.5f).toInt().coerceIn(0, 4)
+                                // If released on slot 2 (center button), resolve to closest destination
+                                val resolvedDestination = when (rawSlot) {
+                                    0 -> NavDestination.Home
+                                    1 -> NavDestination.Activity
+                                    2 -> if (dragSlotFraction < 2.0f) NavDestination.Activity else NavDestination.Insights
+                                    3 -> NavDestination.Insights
+                                    4 -> NavDestination.Budgets
+                                    else -> NavDestination.Home
+                                }
+                                val finalSlot = destinationToSlotIndex(resolvedDestination)
+                                dragSlotFraction = finalSlot.toFloat()
                                 haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                                onNavigateToDestination(destinations[finalIndex])
+                                onNavigateToDestination(resolvedDestination)
                             },
                             onDragCancel = {
                                 isDragging = false
-                                dragOffsetFraction = selectedIndex.toFloat()
+                                dragSlotFraction = currentSlot.toFloat()
                             },
                             onHorizontalDrag = { change, dragAmount ->
                                 change.consume()
-                                val newFraction = (dragOffsetFraction + dragAmount / tabWidthPx)
-                                    .coerceIn(0f, (destinations.size - 1).toFloat())
-                                dragOffsetFraction = newFraction
-                                val currentNearest = (newFraction + 0.5f).toInt().coerceIn(0, destinations.size - 1)
-                                if (currentNearest != lastHapticIndex) {
-                                    lastHapticIndex = currentNearest
+                                val newFraction = (dragSlotFraction + dragAmount / slotWidthPx).coerceIn(0f, 4f)
+                                dragSlotFraction = newFraction
+                                val currentNearest = (newFraction + 0.5f).toInt().coerceIn(0, 4)
+                                if (currentNearest != lastHapticSlot && currentNearest != 2) {
+                                    lastHapticSlot = currentNearest
                                     haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                                 }
                             }
@@ -267,80 +300,131 @@ fun GlassNavigationBar(
                 horizontalArrangement = Arrangement.SpaceEvenly,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                destinations.forEachIndexed { index, destination ->
-                    val proximity = (1f - abs(animatedIndex - index)).coerceIn(0f, 1f)
-                    NavTabItem(
-                        destination = destination,
-                        proximity = proximity,
-                        onClick = {
-                            isDragging = false
-                            dragOffsetFraction = index.toFloat()
-                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                            onNavigateToDestination(destination)
-                        },
-                        modifier = Modifier.weight(1f)
-                    )
+                // Slot 0: Home
+                NavTabItem(
+                    destination = NavDestination.Home,
+                    proximity = (1f - abs(animatedSlot - 0f)).coerceIn(0f, 1f),
+                    onClick = {
+                        isDragging = false
+                        dragSlotFraction = 0f
+                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                        onNavigateToDestination(NavDestination.Home)
+                    },
+                    modifier = Modifier.weight(1f)
+                )
+
+                // Slot 1: Activity
+                NavTabItem(
+                    destination = NavDestination.Activity,
+                    proximity = (1f - abs(animatedSlot - 1f)).coerceIn(0f, 1f),
+                    onClick = {
+                        isDragging = false
+                        dragSlotFraction = 1f
+                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                        onNavigateToDestination(NavDestination.Activity)
+                    },
+                    modifier = Modifier.weight(1f)
+                )
+
+                // Slot 2: Central Add Transaction Action Button (+)
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxHeight(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(50.dp)
+                            .graphicsLayer {
+                                scaleX = addScale
+                                scaleY = addScale
+                            }
+                            .clip(CircleShape)
+                            .background(
+                                Brush.linearGradient(
+                                    colors = listOf(
+                                        accentColor,
+                                        violetColor
+                                    )
+                                )
+                            )
+                            .border(1.dp, ShuDingSpecularRimBrush, CircleShape)
+                            .clickable(
+                                interactionSource = addInteractionSource,
+                                indication = null,
+                                role = Role.Button,
+                                onClick = {
+                                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                    onAddClick()
+                                }
+                            )
+                            .semantics { contentDescription = "Add new transaction" },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        // Top diamond reflection highlight
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth(0.65f)
+                                .height(2.dp)
+                                .align(Alignment.TopCenter)
+                                .background(DiamondSpecularHighlight)
+                        )
+
+                        Icon(
+                            imageVector = Icons.Rounded.Add,
+                            contentDescription = null,
+                            tint = Color.White,
+                            modifier = Modifier.size(26.dp)
+                        )
+
+                        // Bottom rim
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth(0.50f)
+                                .height(1.dp)
+                                .align(Alignment.BottomCenter)
+                                .background(DiamondSpecularRimBottom)
+                        )
+                    }
                 }
+
+                // Slot 3: Insights
+                NavTabItem(
+                    destination = NavDestination.Insights,
+                    proximity = (1f - abs(animatedSlot - 3f)).coerceIn(0f, 1f),
+                    onClick = {
+                        isDragging = false
+                        dragSlotFraction = 3f
+                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                        onNavigateToDestination(NavDestination.Insights)
+                    },
+                    modifier = Modifier.weight(1f)
+                )
+
+                // Slot 4: Budgets
+                NavTabItem(
+                    destination = NavDestination.Budgets,
+                    proximity = (1f - abs(animatedSlot - 4f)).coerceIn(0f, 1f),
+                    onClick = {
+                        isDragging = false
+                        dragSlotFraction = 4f
+                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                        onNavigateToDestination(NavDestination.Budgets)
+                    },
+                    modifier = Modifier.weight(1f)
+                )
             }
-        }
-
-        // Standalone Circular Floating Action Button with Reactive Spring Press & Shu Ding Refraction
-        Box(
-            modifier = Modifier
-                .size(64.dp)
-                .graphicsLayer {
-                    scaleX = addScale
-                    scaleY = addScale
-                }
-                .shuDingLiquidGlass(
-                    shape = CircleShape,
-                    isDark = isDark,
-                    accentGlow = accentColor,
-                    borderWidth = 1.dp
-                )
-                .clickable(
-                    interactionSource = addInteractionSource,
-                    indication = null,
-                    role = Role.Button,
-                    onClick = onAddClick
-                )
-                .semantics { contentDescription = "Add new transaction" },
-            contentAlignment = Alignment.Center
-        ) {
-            // Top Diamond Specular Accent
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth(0.60f)
-                    .height(2.dp)
-                    .align(Alignment.TopCenter)
-                    .background(DiamondSpecularHighlight)
-            )
-
-            Icon(
-                imageVector = Icons.Rounded.Add,
-                contentDescription = null,
-                tint = Color.White,
-                modifier = Modifier.size(28.dp)
-            )
-
-            // Bottom Diamond Specular Accent
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth(0.50f)
-                    .height(1.5.dp)
-                    .align(Alignment.BottomCenter)
-                    .background(DiamondSpecularRimBottom)
-            )
         }
     }
 }
 
 /**
  * Tab item displaying an animated icon and title with proximity-based micro-interactions:
- * - Icon floats upward (-2.5dp) into the liquid glass lens as it approaches
- * - Icon gently zooms (1.12f)
- * - Color smoothly brightens to active white state
- * - Direct tap handler ensures immediate, reliable navigation
+ * - Icon floats upward (-3dp) and zooms (1.14f) as active liquid glass lens approaches
+ * - Smooth color brightening to crisp active white state
+ * - Label fades in gracefully on active state
+ * - Direct tap handler ensures immediate, rock-solid navigation
  */
 @Composable
 private fun NavTabItem(
@@ -354,7 +438,7 @@ private fun NavTabItem(
     val activeContentColor = if (isDark) Color.White else Color(0xFF0F172A)
     val inactiveContentColor = if (isDark) Color(0x9994A3B8) else Color(0xFF64748B)
 
-    // Smooth color interpolation based on proximity to the active liquid lens
+    // Smooth color interpolation based on proximity to active liquid lens
     val contentColor = Color(
         red = inactiveContentColor.red + (activeContentColor.red - inactiveContentColor.red) * proximity,
         green = inactiveContentColor.green + (activeContentColor.green - inactiveContentColor.green) * proximity,
@@ -362,12 +446,13 @@ private fun NavTabItem(
         alpha = inactiveContentColor.alpha + (activeContentColor.alpha - inactiveContentColor.alpha) * proximity
     )
 
-    val iconScale = 1f + proximity * 0.12f
-    val iconElevation = (-2.5f * proximity).dp
+    val iconScale = 1f + proximity * 0.14f
+    val iconElevation = (-3.0f * proximity).dp
+    val isSelected = proximity > 0.6f
 
     Box(
         modifier = modifier
-            .height(52.dp)
+            .height(54.dp)
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null,
@@ -396,7 +481,7 @@ private fun NavTabItem(
             Text(
                 text = destination.title,
                 style = AppTheme.typography.labelSmall.copy(fontSize = 10.sp),
-                fontWeight = if (proximity > 0.6f) FontWeight.Bold else FontWeight.Medium,
+                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
                 color = contentColor,
                 maxLines = 1
             )

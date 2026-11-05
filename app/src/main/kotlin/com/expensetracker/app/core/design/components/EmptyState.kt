@@ -1,5 +1,6 @@
 package com.expensetracker.app.core.design.components
 
+import androidx.annotation.RawRes
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -19,6 +20,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.expensetracker.app.core.design.animation.LottieIllustration
 import com.expensetracker.app.core.design.theme.AppSpacing
 import com.expensetracker.app.core.design.theme.AppTheme
 import com.expensetracker.app.core.design.theme.shuDingLiquidGlass
@@ -29,6 +31,7 @@ fun EmptyState(
     title: String,
     description: String,
     modifier: Modifier = Modifier,
+    @RawRes animationRes: Int? = null,
     actionButtonText: String? = null,
     actionLabel: String? = null,
     onActionClick: (() -> Unit)? = null,
@@ -44,24 +47,33 @@ fun EmptyState(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        // Glowing Circular Liquid Glass Orb with Shu Ding Refraction
-        Box(
-            modifier = Modifier
-                .size(76.dp)
-                .shuDingLiquidGlass(
-                    shape = CircleShape,
-                    isDark = isDark,
-                    accentGlow = AppTheme.colors.accentPrimary,
-                    borderWidth = 1.dp
-                ),
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                tint = if (isDark) Color.White else AppTheme.colors.accentPrimary,
-                modifier = Modifier.size(34.dp)
+        if (animationRes != null) {
+            // Expressive animated Lottie illustration
+            LottieIllustration(
+                rawRes = animationRes,
+                size = 110.dp,
+                modifier = Modifier.padding(bottom = AppSpacing.sm)
             )
+        } else {
+            // Glowing Circular Liquid Glass Orb with Shu Ding Refraction
+            Box(
+                modifier = Modifier
+                    .size(76.dp)
+                    .shuDingLiquidGlass(
+                        shape = CircleShape,
+                        isDark = isDark,
+                        accentGlow = AppTheme.colors.accentPrimary,
+                        borderWidth = 1.dp
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    tint = if (isDark) Color.White else AppTheme.colors.accentPrimary,
+                    modifier = Modifier.size(34.dp)
+                )
+            }
         }
 
         Spacer(modifier = Modifier.height(AppSpacing.lg))
