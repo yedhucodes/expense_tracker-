@@ -222,6 +222,11 @@ fun GlassNavigationBar(
                         scaleX = fluidStretchX
                     }
                     .padding(horizontal = 3.dp)
+                    .clip(CircleShape)
+                    .background(
+                        if (isDark) Color.Transparent else accentColor.copy(alpha = 0.14f),
+                        CircleShape
+                    )
                     .shuDingLiquidGlass(
                         shape = CircleShape,
                         isDark = isDark,
@@ -435,7 +440,7 @@ private fun NavTabItem(
 ) {
     val isDark = AppTheme.colors.isDark
 
-    val activeContentColor = if (isDark) Color.White else Color(0xFF0F172A)
+    val activeContentColor = if (isDark) Color.White else AppTheme.colors.accentPrimary
     val inactiveContentColor = if (isDark) Color(0x9994A3B8) else Color(0xFF64748B)
 
     // Smooth color interpolation based on proximity to active liquid lens

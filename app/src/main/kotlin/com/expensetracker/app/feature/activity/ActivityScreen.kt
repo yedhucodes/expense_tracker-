@@ -45,6 +45,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.expensetracker.app.R
 import com.expensetracker.app.core.design.components.AmountDisplayStyle
@@ -345,16 +346,32 @@ private fun FilterChip(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val isDark = AppTheme.colors.isDark
+
+    val chipBg = if (isSelected) {
+        if (isDark) AppTheme.colors.accentPrimary.copy(alpha = 0.32f) else AppTheme.colors.accentPrimary
+    } else {
+        if (isDark) Color(0x40151D2A) else Color(0xFFE2E8F0)
+    }
+
+    val chipBorder = if (isSelected) {
+        AppTheme.colors.accentPrimary
+    } else {
+        if (isDark) Color(0x35FFFFFF) else Color(0x20000000)
+    }
+
+    val textColor = if (isSelected) {
+        Color.White
+    } else {
+        if (isDark) AppTheme.colors.textSecondary else AppTheme.colors.textPrimary
+    }
+
     Box(
         modifier = modifier
             .height(36.dp)
-            .liquidGlass(
-                shape = PillShape,
-                tint = if (isSelected) AppTheme.colors.accentPrimary.copy(alpha = 0.28f) else if (AppTheme.colors.isDark) Color(0x40151D2A) else Color(0x60FFFFFF),
-                blurRadius = 16.dp,
-                borderTopColor = if (isSelected) AppTheme.colors.accentPrimary else if (AppTheme.colors.isDark) Color(0x35FFFFFF) else Color(0x80FFFFFF),
-                borderBottomColor = if (isSelected) AppTheme.colors.accentPrimary.copy(alpha = 0.4f) else if (AppTheme.colors.isDark) Color(0x0AFFFFFF) else Color(0x15000000)
-            )
+            .clip(PillShape)
+            .background(chipBg, PillShape)
+            .border(1.dp, chipBorder, PillShape)
             .clickable(role = Role.Button, onClick = onClick)
             .padding(horizontal = AppSpacing.md),
         contentAlignment = Alignment.Center
@@ -362,7 +379,8 @@ private fun FilterChip(
         Text(
             text = text,
             style = AppTheme.typography.labelMedium,
-            color = if (isSelected) AppTheme.colors.accentPrimary else AppTheme.colors.textSecondary
+            fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Medium,
+            color = textColor
         )
     }
 }

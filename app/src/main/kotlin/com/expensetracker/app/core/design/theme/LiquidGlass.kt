@@ -250,6 +250,21 @@ val ShuDingSpecularRimBrush = Brush.linearGradient(
 )
 
 /**
+ * Refractive Rim Brush for Light Theme:
+ * Provides subtle edge definition and contrast on light canvases.
+ */
+val ShuDingLightRimBrush = Brush.linearGradient(
+    colors = listOf(
+        Color(0x70FFFFFF), // Top specular reflection
+        Color(0x25000000), // Lateral refractive edge
+        Color(0x18000000), // Soft ambient shadow
+        Color(0x28000000)  // Bottom defining bevel
+    ),
+    start = Offset.Zero,
+    end = Offset.Infinite
+)
+
+/**
  * Modifier applying Shu Ding's physical Liquid Glass optical model:
  * 1. Dual-layer shell gradients (140deg refraction angle + 180deg depth angle)
  * 2. Inset bottom bevel shadow: simulates box-shadow: 0 -10px 25px inset rgba(0, 0, 0, 0.15)
@@ -293,7 +308,7 @@ fun Modifier.shuDingLiquidGlass(
             colors = if (isDark) {
                 listOf(Color(0xCC111420), Color(0xE50B0E17))
             } else {
-                listOf(Color(0xF5FFFFFF), Color(0xE5F1F5F9))
+                listOf(Color(0xF8FFFFFF), Color(0xEEF1F5F9))
             }
         )
 
@@ -302,7 +317,7 @@ fun Modifier.shuDingLiquidGlass(
             colors = listOf(
                 Color.Transparent,
                 Color.Transparent,
-                if (isDark) Color(0x30000000) else Color(0x10000000)
+                if (isDark) Color(0x30000000) else Color(0x18000000)
             )
         )
 
@@ -310,9 +325,9 @@ fun Modifier.shuDingLiquidGlass(
         val glintBrush = Brush.horizontalGradient(
             listOf(
                 Color.Transparent,
-                if (isDark) Color(0x80FFFFFF) else Color(0xC0FFFFFF),
-                if (isDark) Color(0xC0FFFFFF) else Color(0xE0FFFFFF),
-                if (isDark) Color(0x80FFFFFF) else Color(0xC0FFFFFF),
+                if (isDark) Color(0x80FFFFFF) else Color(0x90FFFFFF),
+                if (isDark) Color(0xC0FFFFFF) else Color(0xD0FFFFFF),
+                if (isDark) Color(0x80FFFFFF) else Color(0x90FFFFFF),
                 Color.Transparent
             )
         )
@@ -330,8 +345,8 @@ fun Modifier.shuDingLiquidGlass(
                 drawCircle(
                     brush = Brush.radialGradient(
                         colors = listOf(
-                            accentGlow.copy(alpha = if (isDark) 0.38f else 0.22f),
-                            accentGlow.copy(alpha = if (isDark) 0.14f else 0.08f),
+                            accentGlow.copy(alpha = if (isDark) 0.38f else 0.32f),
+                            accentGlow.copy(alpha = if (isDark) 0.14f else 0.12f),
                             Color.Transparent
                         ),
                         center = Offset(w * 0.5f, h * 0.35f),
@@ -351,4 +366,4 @@ fun Modifier.shuDingLiquidGlass(
             )
         }
     }
-    .border(borderWidth, ShuDingSpecularRimBrush, shape)
+    .border(borderWidth, if (isDark) ShuDingSpecularRimBrush else ShuDingLightRimBrush, shape)

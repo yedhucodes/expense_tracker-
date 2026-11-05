@@ -83,15 +83,37 @@ fun <T> GlassSegmentedControl(
         label = "segmented_slide"
     )
 
+    val trackBg = if (isDark) {
+        Brush.verticalGradient(listOf(Color(0xCC111420), Color(0xE50B0E17)))
+    } else {
+        Brush.verticalGradient(listOf(Color(0xFFE2E8F0), Color(0xFFEDF2F7)))
+    }
+
+    val trackBorder = if (isDark) {
+        ShuDingSpecularRimBrush
+    } else {
+        Brush.verticalGradient(listOf(Color(0x40FFFFFF), Color(0x20000000)))
+    }
+
+    val indicatorBg = if (isDark) {
+        Brush.verticalGradient(listOf(Color(0xDD1B1F2D), Color(0xF0131620)))
+    } else {
+        Brush.verticalGradient(listOf(Color(0xFFFFFFFF), Color(0xFFF8FAFC)))
+    }
+
+    val indicatorBorder = if (isDark) {
+        ShuDingSpecularRimBrush
+    } else {
+        Brush.verticalGradient(listOf(Color(0x60FFFFFF), Color(0x20000000)))
+    }
+
     BoxWithConstraints(
         modifier = modifier
             .fillMaxWidth()
             .height(height)
-            .shuDingLiquidGlass(
-                shape = PillShape,
-                isDark = isDark,
-                borderWidth = 1.dp
-            )
+            .clip(PillShape)
+            .background(trackBg, PillShape)
+            .border(1.dp, trackBorder, PillShape)
             .padding(4.dp),
         contentAlignment = Alignment.CenterStart
     ) {
@@ -102,7 +124,7 @@ fun <T> GlassSegmentedControl(
         val slideDelta = (animatedIndex - validIndex.toFloat()).coerceIn(-0.6f, 0.6f)
         val fluidStretchX = 1f + kotlin.math.abs(slideDelta) * 0.12f
 
-        // Sliding Active Indicator Capsule with Shu Ding Liquid Glass Refraction
+        // Sliding Active Indicator Capsule
         Box(
             modifier = Modifier
                 .offset(x = itemWidth * animatedIndex)
@@ -112,13 +134,19 @@ fun <T> GlassSegmentedControl(
                     scaleX = fluidStretchX
                 }
                 .padding(horizontal = 2.dp)
-                .shuDingLiquidGlass(
-                    shape = PillShape,
-                    isDark = isDark,
-                    accentGlow = currentAccentColor,
-                    borderWidth = 1.dp
-                )
+                .clip(PillShape)
+                .background(indicatorBg, PillShape)
+                .border(1.dp, indicatorBorder, PillShape)
         ) {
+            // Accent glow bloom in dark theme
+            if (isDark) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(currentAccentColor.copy(alpha = 0.22f), PillShape)
+                )
+            }
+
             // Pure Diamond Specular Highlight
             Box(
                 modifier = Modifier
@@ -129,7 +157,7 @@ fun <T> GlassSegmentedControl(
                         Brush.horizontalGradient(
                             listOf(
                                 Color.Transparent,
-                                Color(0xC0FFFFFF),
+                                Color.White.copy(alpha = if (isDark) 0.70f else 0.85f),
                                 Color.Transparent
                             )
                         )
